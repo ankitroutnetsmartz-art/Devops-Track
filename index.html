@@ -3,14 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Nexus OS - DevOps Infrastructure Command Center">
     <title>Nexus OS | DevOps Command Center</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Base background for immediate load */
+        /* CSS Variables for performance and instant load */
+        :root {
+            --bg-main: radial-gradient(circle at 50% 50%, #0f172a 0%, #030712 100%);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
         .glass-bg {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 50% 50%, #0f172a 0%, #030712 100%);
+            inset: 0;
+            background: var(--bg-main);
             z-index: -1;
         }
     </style>
@@ -18,53 +23,49 @@
 <body class="dark-mode">
     <div class="glass-bg"></div>
 
-    <nav class="main-nav glass-card">
+    <nav class="main-nav glass-card" id="nav-header">
         <div class="nav-logo">NEXUS_v2</div>
-        <div class="nav-links">
-            <div class="nav-item" data-info="Infrastructure as Code: Managing cloud resources via Terraform scripts.">IaC</div>
-            <div class="nav-item" data-info="Continuous Integration: Automating builds and unit tests via GitHub Actions.">CI</div>
-            <div class="nav-item" data-info="Continuous Deployment: Automated sync of containers to K8s via ArgoCD.">CD</div>
-            <div class="nav-item" data-info="Observability: Real-time telemetry monitoring via Prometheus and Grafana.">OBS</div>
-            <div class="nav-item" data-info="Security: Secrets management and policy enforcement via HashiCorp Vault.">SEC</div>
+        <div class="nav-links" id="nav-links-container">
+            <button class="nav-item" data-info="Infrastructure as Code: Managing cloud via Terraform.">IaC</button>
+            <button class="nav-item" data-info="Continuous Integration: Automated builds via GitHub Actions.">CI</button>
+            <button class="nav-item" data-info="Continuous Deployment: Automated sync via ArgoCD.">CD</button>
+            <button class="nav-item" data-info="Observability: Telemetry via Prometheus/Grafana.">OBS</button>
+            <button class="nav-item" data-info="Security: Secrets via HashiCorp Vault.">SEC</button>
         </div>
-        <div id="hover-description" class="nav-desc">Hover over a component to view pipeline role...</div>
+        <div id="hover-description" class="nav-desc" aria-live="polite">Hover over a component...</div>
     </nav>
 
     <div class="container main-layout">
-        
         <div class="ops-column">
-            
             <div class="health-bar glass-card">
-                <div class="health-item" id="health-aws"><span class="status-indicator"></span> AWS_US_EAST_1</div>
-                <div class="health-item" id="health-github"><span class="status-indicator"></span> GITHUB_API</div>
-                <div class="health-item" id="health-k8s"><span class="status-indicator"></span> K8S_CLUSTER</div>
-                <div class="health-item" id="health-db"><span class="status-indicator"></span> RDS_INSTANCE</div>
+                <div class="health-item" id="health-aws"><span class="status-indicator" aria-hidden="true"></span> AWS_US_EAST_1</div>
+                <div class="health-item" id="health-github"><span class="status-indicator" aria-hidden="true"></span> GITHUB_API</div>
+                <div class="health-item" id="health-k8s"><span class="status-indicator" aria-hidden="true"></span> K8S_CLUSTER</div>
+                <div class="health-item" id="health-db"><span class="status-indicator" aria-hidden="true"></span> RDS_INSTANCE</div>
             </div>
 
-            
             <section class="glass-card provision-wizard">
                 <h3><span class="status-dot"></span> Resource Provisioning</h3>
                 
-                <div class="selector-label">Cloud Provider</div>
-                <div class="provision-row" id="cloud-provider-row">
-                    <div class="provision-opt active" onclick="selectCloud(this, 'AWS')">AWS</div>
-                    <div class="provision-opt" onclick="selectCloud(this, 'Azure')">Azure</div>
-                    <div class="provision-opt" onclick="selectCloud(this, 'GCP')">GCP</div>
+                <p class="selector-label">Cloud Provider</p>
+                <div class="provision-row" id="cloud-provider-row" data-type="cloud">
+                    <button class="provision-opt active" data-value="AWS">AWS</button>
+                    <button class="provision-opt" data-value="Azure">Azure</button>
+                    <button class="provision-opt" data-value="GCP">GCP</button>
                 </div>
 
-                <div class="selector-label">Deployment Region</div>
-                <select id="region-select" class="provision-select" onchange="logRegionChange()">
-                    </select>
+                <label for="region-select" class="selector-label">Deployment Region</label>
+                <select id="region-select" class="provision-select"></select>
 
-                <div class="selector-label">Operating System</div>
-                <div class="provision-row" id="os-row">
-                    <div class="provision-opt active" onclick="selectOS(this, 'Ubuntu')">Ubuntu</div>
-                    <div class="provision-opt" onclick="selectOS(this, 'RHEL')">RHEL</div>
-                    <div class="provision-opt" onclick="selectOS(this, 'Debian')">Debian</div>
+                <p class="selector-label">Operating System</p>
+                <div class="provision-row" id="os-row" data-type="os">
+                    <button class="provision-opt active" data-value="Ubuntu">Ubuntu</button>
+                    <button class="provision-opt" data-value="RHEL">RHEL</button>
+                    <button class="provision-opt" data-value="Debian">Debian</button>
                 </div>
 
-                <div class="selector-label">Architecture</div>
-                <select id="variant-select" class="provision-select" onchange="updateVariantLog()">
+                <label for="variant-select" class="selector-label">Architecture</label>
+                <select id="variant-select" class="provision-select">
                     <option value="x86_64">Standard x86_64 (Intel/AMD)</option>
                     <option value="arm64">ARM64 (Graviton/Ampere)</option>
                     <option value="minimal">Minimal Core (Container Optimized)</option>
@@ -74,7 +75,7 @@
             <section class="gauge-container">
                 <div class="glass-card gauge-card">
                     <h4>CPU_LOAD</h4>
-                    <svg viewBox="0 0 100 50">
+                    <svg viewBox="0 0 100 50" aria-labelledby="cpu-text">
                         <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#1e293b" stroke-width="8"/>
                         <path id="cpu-gauge" d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#007aff" stroke-width="8" stroke-dasharray="125" stroke-dashoffset="125"/>
                     </svg>
@@ -82,7 +83,7 @@
                 </div>
                 <div class="glass-card gauge-card">
                     <h4>RAM_USAGE</h4>
-                    <svg viewBox="0 0 100 50">
+                    <svg viewBox="0 0 100 50" aria-labelledby="ram-text">
                         <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#1e293b" stroke-width="8"/>
                         <path id="ram-gauge" d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#34c759" stroke-width="8" stroke-dasharray="125" stroke-dashoffset="125"/>
                     </svg>
@@ -92,11 +93,11 @@
 
             <section class="glass-card action-panel">
                 <div class="btn-group">
-                    <button class="deploy-btn" id="deploy-btn" onclick="startDeployment()">🚀 Start Production Deploy</button>
-                    <button class="panic-btn" onclick="triggerPanic()">🚨 PANIC</button>
+                    <button class="deploy-btn" id="deploy-btn">🚀 Start Production Deploy</button>
+                    <button class="panic-btn" id="panic-btn">🚨 PANIC</button>
                 </div>
                 
-                <div id="progress-container" class="progress-wrap" style="display: none;">
+                <div id="progress-container" class="progress-wrap" hidden>
                     <div class="progress-info">
                         <span id="progress-status">Initializing...</span>
                         <span id="progress-percent">0%</span>
@@ -118,11 +119,11 @@
 
             <section class="glass-card terminal-section">
                 <h3>LIVE_TELEMETRY</h3>
-                <div id="terminal" class="terminal"></div>
+                <div id="terminal" class="terminal" role="log" aria-live="polite"></div>
             </section>
         </aside>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 </body>
 </html>

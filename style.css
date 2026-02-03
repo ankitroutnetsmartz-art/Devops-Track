@@ -6,47 +6,51 @@
     --text: #f9fafb;
     --text-dim: #9ca3af;
     --accent: #007aff;
+    --accent-glow: rgba(0, 122, 255, 0.15);
     --success: #34c759;
     --danger: #ef4444;
     --warning: #f59e0b;
+    --blur: blur(16px);
 }
 
 /* --- Base Typography & Reset --- */
+* { box-sizing: border-box; }
+
 body {
     margin: 0;
-    padding: 0;
-    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'SF Pro Display', -apple-system, system-ui, sans-serif;
     background-color: var(--bg);
     color: var(--text);
     overflow-x: hidden;
+    line-height: 1.5;
 }
 
 /* --- Layout Architecture --- */
 .container {
     max-width: 1400px;
-    margin: 0 auto;
+    margin-inline: auto;
 }
 
 .main-layout {
     display: grid;
     grid-template-columns: 1fr 380px;
     gap: 24px;
-    padding: 0 20px 20px 20px;
+    padding: 0 20px 20px;
     height: calc(100vh - 120px);
 }
 
 /* --- Glassmorphism Components --- */
 .glass-card {
     background: var(--card);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 20px;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
 }
 
-/* --- Navigation & Pipeline Glossary --- */
+/* --- Navigation --- */
 .main-nav {
     display: flex;
     align-items: center;
@@ -57,9 +61,10 @@ body {
 }
 
 .nav-logo { font-weight: 800; color: var(--accent); letter-spacing: 1px; font-size: 1.1rem; }
-.nav-links { display: flex; gap: 15px; }
+.nav-links { display: flex; gap: 12px; }
 
 .nav-item {
+    all: unset;
     font-size: 0.75rem;
     font-weight: 700;
     color: var(--text-dim);
@@ -67,12 +72,12 @@ body {
     padding: 6px 12px;
     border-radius: 12px;
     border: 1px solid transparent;
-    transition: all 0.2s;
+    transition: 0.2s ease;
 }
 
-.nav-item:hover {
+.nav-item:hover, .nav-item:focus {
     color: var(--text);
-    background: rgba(0, 122, 255, 0.15);
+    background: var(--accent-glow);
     border-color: var(--accent);
 }
 
@@ -84,26 +89,35 @@ body {
     flex-direction: column;
     gap: 20px;
     overflow-y: auto;
-    padding-right: 10px;
+    scrollbar-gutter: stable;
 }
 
 /* Health Bar */
 .health-bar { display: flex; justify-content: space-between; padding: 12px 24px !important; }
-.health-item { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 600; font-family: monospace; }
-.status-indicator { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); }
-
-/* Provisioning Wizard & Dynamic Selectors */
-.selector-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-dim); margin: 15px 0 8px 0; letter-spacing: 1px; }
-.provision-row { display: flex; gap: 10px; }
-.provision-opt {
-    flex: 1; padding: 10px; text-align: center; background: rgba(255,255,255,0.03);
-    border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: 0.2s;
+.health-item { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 600; font-family: ui-monospace, monospace; }
+.status-indicator { 
+    width: 8px; height: 8px; border-radius: 50%; 
+    background: var(--success); 
+    box-shadow: 0 0 8px var(--success); 
 }
+
+/* Provisioning Wizard */
+.selector-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-dim); margin-block: 15px 8px; letter-spacing: 1px; }
+.provision-row { display: flex; gap: 10px; }
+
+.provision-opt {
+    flex: 1; padding: 10px; text-align: center; 
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border); border-radius: 8px; 
+    cursor: pointer; font-size: 0.85rem; transition: 0.2s;
+}
+
 .provision-opt.active { border-color: var(--accent); background: rgba(0, 122, 255, 0.1); color: var(--accent); }
 
 .provision-select {
-    width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); 
-    color: #fff; border-radius: 8px; margin-top: 5px; cursor: pointer; appearance: none;
+    width: 100%; padding: 12px; background: rgba(0,0,0,0.3); 
+    border: 1px solid var(--border); color: #fff; 
+    border-radius: 8px; margin-top: 5px; cursor: pointer;
 }
 
 /* --- Gauges --- */
@@ -114,26 +128,37 @@ body {
 
 /* --- Action Buttons & Progress --- */
 .btn-group { display: flex; gap: 12px; }
-.deploy-btn, .panic-btn { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; }
+.deploy-btn, .panic-btn { 
+    flex: 1; padding: 12px; border-radius: 8px; border: none; 
+    font-weight: 700; cursor: pointer; transition: 0.2s; 
+}
 .deploy-btn { background: var(--accent); color: white; }
 .panic-btn { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
 .panic-btn:hover { background: var(--danger); color: white; }
 
 .progress-bg { background: rgba(255,255,255,0.05); height: 6px; border-radius: 3px; overflow: hidden; margin-top: 10px; }
-.progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.4s ease; }
+.progress-fill { height: 100%; background: var(--accent); width: 0; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 
-/* --- Side Panel (Audits & Logs) --- */
-.side-panel { display: flex; flex-direction: column; gap: 20px; }
-.feed-content { overflow-y: auto; flex: 1; font-size: 0.8rem; font-family: monospace; color: var(--text-dim); }
-.terminal { background: rgba(0,0,0,0.5); height: 200px; padding: 12px; font-family: 'Fira Code', monospace; font-size: 0.7rem; color: #10b981; overflow-y: auto; border: 1px solid var(--border); }
+/* --- Side Panel --- */
+.side-panel { display: grid; grid-template-rows: 1fr 200px; gap: 20px; }
+.feed-content { overflow-y: auto; font-size: 0.8rem; font-family: ui-monospace, monospace; color: var(--text-dim); }
+.terminal { 
+    background: rgba(0,0,0,0.5); padding: 12px; 
+    font-family: 'Fira Code', monospace; font-size: 0.7rem; 
+    color: #10b981; overflow-y: auto; border: 1px solid var(--border); 
+}
 
 /* --- Animations --- */
 @keyframes panic-shake {
-    0% { transform: translate(1px, 1px); }
-    50% { transform: translate(-2px, -1px); }
-    100% { transform: translate(1px, 1px); }
+    0%, 100% { transform: translate(1px, 1px); }
+    25% { transform: translate(-2px, -1px); }
+    75% { transform: translate(2px, 1px); }
 }
-.panic-active { animation: panic-shake 0.1s infinite; background: #450a0a !important; }
+.panic-active { 
+    animation: panic-shake 0.1s infinite; 
+    background: #450a0a !important; 
+    will-change: transform;
+}
 
 /* --- Scrollbar --- */
 ::-webkit-scrollbar { width: 4px; }
