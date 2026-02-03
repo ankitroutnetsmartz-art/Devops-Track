@@ -3,30 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro DevOps Stack Dashboard</title>
+    <title>Nexus OS | DevOps Command Center</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Base background for immediate load */
+        .glass-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #0f172a 0%, #030712 100%);
+            z-index: -1;
+        }
+    </style>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>DevOps Production Radar</h1>
-            <div class="controls">
-                <button onclick="filterStack('all')">All</button>
-                <button onclick="filterStack('IaC')">IaC</button>
-                <button onclick="filterStack('CI/CD')">CI/CD</button>
-                <button onclick="filterStack('OBS')">Observability</button>
-            </div>
-        </header>
+<body class="dark-mode">
+    <div class="glass-bg"></div>
 
-        <main id="stack-grid" class="grid"></main>
+    <nav class="main-nav glass-card">
+        <div class="nav-logo">NEXUS_v2</div>
+        <div class="nav-links">
+            <div class="nav-item" data-info="Infrastructure as Code: Managing cloud resources via Terraform scripts.">IaC</div>
+            <div class="nav-item" data-info="Continuous Integration: Automating builds and unit tests via GitHub Actions.">CI</div>
+            <div class="nav-item" data-info="Continuous Deployment: Automated sync of containers to K8s via ArgoCD.">CD</div>
+            <div class="nav-item" data-info="Observability: Real-time telemetry monitoring via Prometheus and Grafana.">OBS</div>
+            <div class="nav-item" data-info="Security: Secrets management and policy enforcement via HashiCorp Vault.">SEC</div>
+        </div>
+        <div id="hover-description" class="nav-desc">Hover over a component to view pipeline role...</div>
+    </nav>
 
-        <section class="terminal-section">
-            <h3>Live System Logs</h3>
-            <div id="terminal" class="terminal">
-                <div class="line">> System initialized...</div>
+    <div class="container main-layout">
+        
+        <div class="ops-column">
+            
+            <div class="health-bar glass-card">
+                <div class="health-item" id="health-aws"><span class="status-indicator"></span> AWS_US_EAST_1</div>
+                <div class="health-item" id="health-github"><span class="status-indicator"></span> GITHUB_API</div>
+                <div class="health-item" id="health-k8s"><span class="status-indicator"></span> K8S_CLUSTER</div>
+                <div class="health-item" id="health-db"><span class="status-indicator"></span> RDS_INSTANCE</div>
             </div>
-        </section>
+
+            
+            <section class="glass-card provision-wizard">
+                <h3><span class="status-dot"></span> Resource Provisioning</h3>
+                
+                <div class="selector-label">Cloud Provider</div>
+                <div class="provision-row" id="cloud-provider-row">
+                    <div class="provision-opt active" onclick="selectCloud(this, 'AWS')">AWS</div>
+                    <div class="provision-opt" onclick="selectCloud(this, 'Azure')">Azure</div>
+                    <div class="provision-opt" onclick="selectCloud(this, 'GCP')">GCP</div>
+                </div>
+
+                <div class="selector-label">Deployment Region</div>
+                <select id="region-select" class="provision-select" onchange="logRegionChange()">
+                    </select>
+
+                <div class="selector-label">Operating System</div>
+                <div class="provision-row" id="os-row">
+                    <div class="provision-opt active" onclick="selectOS(this, 'Ubuntu')">Ubuntu</div>
+                    <div class="provision-opt" onclick="selectOS(this, 'RHEL')">RHEL</div>
+                    <div class="provision-opt" onclick="selectOS(this, 'Debian')">Debian</div>
+                </div>
+
+                <div class="selector-label">Architecture</div>
+                <select id="variant-select" class="provision-select" onchange="updateVariantLog()">
+                    <option value="x86_64">Standard x86_64 (Intel/AMD)</option>
+                    <option value="arm64">ARM64 (Graviton/Ampere)</option>
+                    <option value="minimal">Minimal Core (Container Optimized)</option>
+                </select>
+            </section>
+
+            <section class="gauge-container">
+                <div class="glass-card gauge-card">
+                    <h4>CPU_LOAD</h4>
+                    <svg viewBox="0 0 100 50">
+                        <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#1e293b" stroke-width="8"/>
+                        <path id="cpu-gauge" d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#007aff" stroke-width="8" stroke-dasharray="125" stroke-dashoffset="125"/>
+                    </svg>
+                    <div class="gauge-value" id="cpu-text">0%</div>
+                </div>
+                <div class="glass-card gauge-card">
+                    <h4>RAM_USAGE</h4>
+                    <svg viewBox="0 0 100 50">
+                        <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#1e293b" stroke-width="8"/>
+                        <path id="ram-gauge" d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#34c759" stroke-width="8" stroke-dasharray="125" stroke-dashoffset="125"/>
+                    </svg>
+                    <div class="gauge-value" id="ram-text">0%</div>
+                </div>
+            </section>
+
+            <section class="glass-card action-panel">
+                <div class="btn-group">
+                    <button class="deploy-btn" id="deploy-btn" onclick="startDeployment()">🚀 Start Production Deploy</button>
+                    <button class="panic-btn" onclick="triggerPanic()">🚨 PANIC</button>
+                </div>
+                
+                <div id="progress-container" class="progress-wrap" style="display: none;">
+                    <div class="progress-info">
+                        <span id="progress-status">Initializing...</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="progress-bg">
+                        <div id="progress-bar" class="progress-fill"></div>
+                    </div>
+                </div>
+            </section>
+
+            <main id="stack-grid" class="grid"></main>
+        </div>
+
+        <aside class="side-panel">
+            <section class="glass-card feed-section">
+                <h3>GIT_AUDIT_FEED</h3>
+                <div id="git-feed" class="feed-content"></div>
+            </section>
+
+            <section class="glass-card terminal-section">
+                <h3>LIVE_TELEMETRY</h3>
+                <div id="terminal" class="terminal"></div>
+            </section>
+        </aside>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
