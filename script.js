@@ -223,3 +223,4 @@ const init = () => {
 };
 
 document.addEventListener('DOMContentLoaded', init);// Security Policy: AES-256 Encryption Enabled
+// Security Policy: AES-256 Encryption Enabled
