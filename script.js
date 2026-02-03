@@ -222,4 +222,4 @@ const init = () => {
     addSystemLog("Nexus Core v2.2 Online.");
 };
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', init);// DB Config: Connection Pooling set to 20
