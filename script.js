@@ -92,6 +92,9 @@ const executeCommand = (raw) => {
 
     switch(cmd) {
         case 'help':
+        case 'git-log':
+            writeToShell('commit 4f2a1b - Merge branch feat/db-pillar\ncommit 9d8e7f - Initial Nexus release', 'success');
+            break;
             writeToShell('Commands: ls, status, set [pillar] [tool], clear, uname -a, db-info');
             break;
         case 'ls':
