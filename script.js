@@ -1,154 +1,169 @@
 /**
- * Nexus v2.0 - Senior DevOps Command Center Logic
- * Optimized for high-uptime production environments.
+ * Nexus v2.0 - Senior DevOps Partner Logic
+ * Strategy: Event Delegation, Smoothed Telemetry, & Async Pipeline Simulation.
  */
 
 "use strict";
 
 const CONFIG = {
-    cloudRegions: {
-        'AWS': ['us-east-1 (N. Virginia)', 'us-west-2 (Oregon)', 'eu-central-1 (Frankfurt)', 'ap-south-1 (Mumbai)'],
-        'Azure': ['East US', 'West US 2', 'North Europe', 'Southeast Asia'],
-        'GCP': ['us-central1 (Iowa)', 'europe-west1 (Belgium)', 'asia-east1 (Taiwan)', 'us-east4 (Virginia)']
+    cloud: {
+        'AWS': ['us-east-1 (Virginia)', 'us-west-2 (Oregon)', 'eu-central-1 (Frankfurt)'],
+        'Azure': ['East US', 'West US 2', 'North Europe'],
+        'GCP': ['us-central1 (Iowa)', 'europe-west1 (Belgium)', 'asia-east1 (Taiwan)']
     },
-    techStack: [
-        { name: "Terraform", cat: "IaC", desc: "Infra Provisioning" },
-        { name: "Kubernetes", cat: "Orch", desc: "Container Orchestration" },
-        { name: "GitHub Actions", cat: "CI/CD", desc: "Pipeline Automation" },
-        { name: "Vault", cat: "Sec", desc: "Secrets Management" }
+    stack: [
+        { name: "Terraform", cat: "IaC", desc: "HCL Infrastructure Provisioning" },
+        { name: "Kubernetes", cat: "Orch", desc: "Cloud Native Orchestration" },
+        { name: "Actions", cat: "CI/CD", desc: "Automated Workflow Engine" },
+        { name: "Vault", cat: "Sec", desc: "Identity-based Secrets Management" }
     ],
-    gaugeMaxOffset: 125
+    gaugeMax: 125 // Matches SVG stroke-dasharray
 };
 
-// --- DOM CACHE ---
-const dom = {
-    regionSelect: document.getElementById('region-select'),
+// --- DOM Cache ---
+const UI = {
     terminal: document.getElementById('terminal'),
+    regionSelect: document.getElementById('region-select'),
     hoverDesc: document.getElementById('hover-description'),
-    progressBar: document.getElementById('progress-bar'),
-    progressStatus: document.getElementById('progress-status'),
-    progressContainer: document.getElementById('progress-container'),
-    deployBtn: document.getElementById('deploy-btn'),
+    progBar: document.getElementById('progress-bar'),
+    progCont: document.getElementById('progress-container'),
+    progStat: document.getElementById('progress-status'),
+    progPerc: document.getElementById('progress-percent'),
     stackGrid: document.getElementById('stack-grid')
 };
 
-// --- CORE UTILITIES ---
+// --- Utility Functions ---
 const addLog = (msg) => {
     const line = document.createElement('div');
-    line.textContent = `> [${new Date().toLocaleTimeString()}] ${msg}`;
-    dom.terminal.prepend(line);
-    if (dom.terminal.children.length > 50) dom.terminal.lastChild.remove(); // Buffer management
+    line.innerHTML = `<span style="color: var(--accent)">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+    UI.terminal.prepend(line);
+    if (UI.terminal.children.length > 50) UI.terminal.lastChild.remove();
 };
 
-// --- UI HANDLERS ---
-const updateRegionDropdown = (provider) => {
-    const regions = CONFIG.cloudRegions[provider] || [];
-    dom.regionSelect.replaceChildren(...regions.map(region => {
-        const opt = document.createElement('option');
-        opt.value = opt.textContent = region;
-        return opt;
-    }));
-    addLog(`SYSTEM: Regions updated for ${provider}`);
-};
+// --- Telemetry Perk: Smooth Gauges ---
+const updateTelemetry = () => {
+    const refreshGauge = (id, textId, min, max) => {
+        const val = Math.floor(Math.random() * (max - min)) + min;
+        const offset = CONFIG.gaugeMax - (val / 100 * CONFIG.gaugeMax);
+        const path = document.getElementById(id);
+        const label = document.getElementById(textId);
 
-const handleSelection = (e) => {
-    const target = e.target.closest('.provision-opt');
-    if (!target) return;
-
-    const parent = target.parentElement;
-    const type = parent.dataset.type; // cloud or os
-    const value = target.dataset.value;
-
-    parent.querySelector('.active')?.classList.remove('active');
-    target.classList.add('active');
-
-    if (type === 'cloud') updateRegionDropdown(value);
-    addLog(`${type.toUpperCase()}_CONTEXT: Switched to ${value}`);
-};
-
-const updateGauges = () => {
-    const update = (id, textId, value) => {
-        const offset = CONFIG.gaugeMaxOffset - (value / 100 * CONFIG.gaugeMaxOffset);
-        document.getElementById(id).style.strokeDashoffset = offset;
-        document.getElementById(textId).textContent = `${value}%`;
+        if (path && label) {
+            path.style.strokeDashoffset = offset;
+            label.textContent = `${val}%`;
+            
+            // Critical Threshold Alerting
+            if (val > 85) {
+                path.style.stroke = "var(--danger)";
+                label.style.color = "var(--danger)";
+            } else {
+                path.style.stroke = id.includes('cpu') ? "var(--accent)" : "var(--success)";
+                label.style.color = "var(--text)";
+            }
+        }
     };
 
-    update('cpu-gauge', 'cpu-text', Math.floor(Math.random() * 30) + 10);
-    update('ram-gauge', 'ram-text', Math.floor(Math.random() * 20) + 55);
+    refreshGauge('cpu-gauge', 'cpu-text', 15, 45); // Nominal CPU
+    refreshGauge('ram-gauge', 'ram-text', 60, 82); // Nominal RAM
 };
 
-// --- PIPELINE LOGIC ---
-const startDeployment = async () => {
-    const steps = ["Terraform Plan", "Security Scan", "Docker Build", "K8s Apply"];
-    dom.deployBtn.disabled = true;
-    dom.progressContainer.hidden = false;
+// --- Core Handlers ---
+const updateRegionDropdown = (provider) => {
+    const regions = CONFIG.cloud[provider] || [];
+    UI.regionSelect.replaceChildren(...regions.map(r => {
+        const opt = document.createElement('option');
+        opt.value = opt.textContent = r;
+        return opt;
+    }));
+    addLog(`NET_CONFIG: Populated regions for ${provider}`);
+};
+
+const runDeployment = async () => {
+    const stages = ["Terraform Plan", "Security Audit", "Docker Build", "K8s Rollout"];
+    const deployBtn = document.getElementById('deploy-btn');
+    
+    deployBtn.disabled = true;
+    UI.progCont.hidden = false;
     
     let progress = 0;
     const interval = setInterval(() => {
-        progress += Math.floor(Math.random() * 15) + 5;
+        progress += Math.floor(Math.random() * 8) + 2;
         
         if (progress >= 100) {
             progress = 100;
             clearInterval(interval);
             setTimeout(() => {
-                dom.progressContainer.hidden = true;
-                dom.deployBtn.disabled = false;
-                addLog("DEPLOY: Production rollout complete.");
-            }, 800);
+                UI.progCont.hidden = true;
+                deployBtn.disabled = false;
+                addLog("DEPLOY: Production cluster synchronization complete.");
+            }, 1000);
         }
 
-        dom.progressBar.style.width = `${progress}%`;
-        dom.progressStatus.textContent = steps[Math.floor((progress / 101) * steps.length)];
-    }, 500);
+        UI.progBar.style.width = `${progress}%`;
+        UI.progPerc.textContent = `${progress}%`;
+        UI.progStat.textContent = stages[Math.floor((progress / 101) * stages.length)];
+    }, 350);
 };
 
-const triggerPanic = () => {
-    document.body.classList.add('panic-active');
-    addLog("!!! CRITICAL: LOCKDOWN INITIATED !!!");
-    setTimeout(() => {
-        document.body.classList.remove('panic-active');
-        alert("SECURITY: Environment isolated. Keys revoked.");
-    }, 3000);
-};
-
-// --- INITIALIZATION ---
+// --- Initialization ---
 const init = () => {
-    // Render Stack
-    dom.stackGrid.innerHTML = CONFIG.techStack.map(i => `
-        <div class="glass-card">
-            <small style="color:var(--accent)">${i.cat}</small>
-            <h3>${i.name}</h3>
-            <p style="font-size:0.75rem">${i.desc}</p>
-        </div>
+    // 1. Build Tech Stack Cards
+    UI.stackGrid.innerHTML = CONFIG.stack.map(item => `
+        <article class="glass-card">
+            <small style="color: var(--accent); font-weight: 800;">${item.cat}</small>
+            <h3 style="margin: 5px 0;">${item.name}</h3>
+            <p style="font-size: 0.7rem; color: var(--text-dim); line-height: 1.2;">${item.desc}</p>
+        </article>
     `).join('');
 
-    // Event Delegation: Nav Hovers
-    document.getElementById('nav-links-container').addEventListener('mouseover', (e) => {
-        if (e.target.classList.contains('nav-item')) {
-            dom.hoverDesc.textContent = e.target.dataset.info;
-            dom.hoverDesc.style.color = "var(--text)";
+    // 2. Global Event Delegation (Click)
+    document.addEventListener('click', (e) => {
+        // Provisioning Buttons
+        const opt = e.target.closest('.provision-opt');
+        if (opt) {
+            const group = opt.parentElement;
+            group.querySelector('.active').classList.remove('active');
+            opt.classList.add('active');
+            
+            if (group.dataset.type === 'cloud') updateRegionDropdown(opt.dataset.value);
+            addLog(`UI_EVENT: Context switched to ${opt.dataset.value}`);
         }
+
+        // Action Buttons
+        if (e.target.id === 'deploy-btn') runDeployment();
+        if (e.target.id === 'panic-btn') {
+            document.body.classList.add('panic-active');
+            addLog("CRITICAL: LOCKDOWN INITIATED by system administrator.");
+            setTimeout(() => document.body.classList.remove('panic-active'), 3000);
+        }
+    });
+
+    // 3. Nav Hover Delegation
+    document.getElementById('nav-links-container').addEventListener('mouseover', (e) => {
+        const item = e.target.closest('.nav-item');
+        if (item) UI.hoverDesc.textContent = item.dataset.info;
     });
 
     document.getElementById('nav-links-container').addEventListener('mouseout', () => {
-        dom.hoverDesc.textContent = "Hover over a component...";
-        dom.hoverDesc.style.color = "var(--accent)";
+        UI.hoverDesc.textContent = "System idle. Ready for input...";
     });
 
-    // Event Delegation: Provisioning Buttons
-    document.addEventListener('click', (e) => {
-        if (e.target.closest('.provision-opt')) handleSelection(e);
-        if (e.target.id === 'deploy-btn') startDeployment();
-        if (e.target.id === 'panic-btn') triggerPanic();
+    // 4. Region Select Change
+    UI.regionSelect.addEventListener('change', (e) => {
+        addLog(`NET_CONFIG: Target region locked to ${e.target.value}`);
     });
 
-    // Region Select Listener
-    dom.regionSelect.addEventListener('change', () => addLog(`NET_CONFIG: Region locked to ${dom.regionSelect.value}`));
-
-    // Cycles
+    // Start Telemetry Cycles
     updateRegionDropdown('AWS');
-    setInterval(updateGauges, 3000);
-    addLog("Nexus Core Online. Monitoring Production...");
+    updateTelemetry();
+    setInterval(updateTelemetry, 1000); // 1s loop for smooth glide
+    
+    addLog("Nexus OS v2.0 Core Online. Uptime: 0.01h");
 };
 
-document.addEventListener('DOMContentLoaded', init);
+// Safety check for DOM availability
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
