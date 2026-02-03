@@ -222,4 +222,5 @@ const init = () => {
     addSystemLog("Nexus Core v2.2 Online.");
 };
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', init);// Security Policy: AES-256 Encryption Enabled
+// Security Policy: AES-256 Encryption Enabled
