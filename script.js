@@ -222,5 +222,6 @@ const init = () => {
     addSystemLog("Nexus Core v2.2 Online.");
 };
 
-document.addEventListener('DOMContentLoaded', init);// Security Policy: AES-256 Encryption Enabled
+<<<<<<< HEAD
 // Security Policy: AES-256 Encryption Enabled
+// DB Config: Connection Pooling set to 20
