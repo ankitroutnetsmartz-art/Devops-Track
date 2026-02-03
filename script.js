@@ -1,26 +1,26 @@
 /**
- * Nexus OS v2.0 - Final Consolidated Engine
- * Features: Terminal Command Mapping, Pillar Sync, and Telemetry Loops.
+ * Nexus OS v2.2 - Ubuntu Terminal Edition Engine
+ * Integrated: Database Pillar, Command History, & UI Synchronization.
  */
 
 "use strict";
 
 const CONFIG = {
-    cloud: {
-        'AWS': ['us-east-1', 'us-west-2', 'eu-central-1'],
-        'Azure': ['East US', 'West US 2', 'North Europe'],
-        'GCP': ['us-central1', 'europe-west1', 'asia-east1']
+    cloud: { 
+        'AWS': ['us-east-1', 'us-west-2', 'eu-central-1'], 
+        'Azure': ['East US', 'West US 2', 'North Europe'], 
+        'GCP': ['us-central1', 'europe-west1', 'asia-east1'] 
     },
     pillars: [
-        { id: "iac", name: "Infrastructure", tools: ["Terraform", "Pulumi", "CloudFormation", "OpenTofu"] },
-        { id: "orch", name: "Orchestration", tools: ["Kubernetes", "Docker Swarm", "Nomad", "OpenShift"] },
-        { id: "cicd", name: "Pipeline", tools: ["GitHub Actions", "Jenkins", "GitLab CI", "ArgoCD"] },
-        { id: "sec", name: "Security", tools: ["Vault", "Snyk", "SonarQube", "Trivy"] }
+        { id: "iac", name: "Infrastructure", tools: ["Terraform", "Pulumi", "OpenTofu"] },
+        { id: "orch", name: "Orchestration", tools: ["Kubernetes", "Nomad", "OpenShift"] },
+        { id: "db", name: "Database", tools: ["PostgreSQL", "MongoDB", "Redis", "DynamoDB", "MySQL"] },
+        { id: "cicd", name: "Pipeline", tools: ["GitHub Actions", "Jenkins", "ArgoCD"] },
+        { id: "sec", name: "Security", tools: ["Vault", "Snyk", "Trivy"] }
     ],
     gaugeMax: 125
 };
 
-// --- DOM Cache ---
 const UI = {
     terminal: document.getElementById('terminal'),
     interTerm: document.getElementById('interactive-terminal'),
@@ -30,11 +30,14 @@ const UI = {
     progBar: document.getElementById('progress-bar'),
     progCont: document.getElementById('progress-container'),
     progStat: document.getElementById('progress-status'),
-    progPerc: document.getElementById('progress-percent'),
-    hoverDesc: document.getElementById('hover-description')
+    progPerc: document.getElementById('progress-percent')
 };
 
-// --- Logging & Terminal Outputs ---
+// --- Shell State ---
+let cmdHistory = [];
+let historyIndex = -1;
+
+// --- System Logging ---
 const addSystemLog = (msg) => {
     const entry = document.createElement('div');
     entry.innerHTML = `<span style="color: var(--accent)">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
@@ -45,17 +48,18 @@ const addSystemLog = (msg) => {
 const writeToShell = (text, type = 'output') => {
     const line = document.createElement('div');
     line.className = `term-line term-${type}`;
+    line.style.whiteSpace = 'pre-wrap';
     line.innerHTML = text;
     UI.interTerm.appendChild(line);
     UI.interTerm.scrollTop = UI.interTerm.scrollHeight;
 };
 
-// --- Pillar Management ---
+// --- Pillar Engine ---
 const renderPillars = () => {
     UI.stackGrid.innerHTML = CONFIG.pillars.map(p => `
-        <article class="glass-card stack-module" data-pillar="${p.id}">
+        <article class="glass-card stack-module">
             <small class="module-badge">${p.id.toUpperCase()}</small>
-            <h3 class="module-title">${p.name}</h3>
+            <h3>${p.name}</h3>
             <select class="provision-select module-select" data-pillar="${p.id}">
                 ${p.tools.map(tool => `<option value="${tool}">${tool}</option>`).join('')}
             </select>
@@ -64,7 +68,7 @@ const renderPillars = () => {
     `).join('');
 };
 
-// --- Telemetry Loop ---
+// --- Telemetry Simulation ---
 const updateTelemetry = () => {
     const refresh = (id, textId, min, max) => {
         const val = Math.floor(Math.random() * (max - min)) + min;
@@ -77,69 +81,98 @@ const updateTelemetry = () => {
             path.style.stroke = val > 80 ? "var(--danger)" : (id.includes('cpu') ? "var(--accent)" : "var(--success)");
         }
     };
-    refresh('cpu-gauge', 'cpu-text', 12, 38);
-    refresh('ram-gauge', 'ram-text', 55, 78);
+    refresh('cpu-gauge', 'cpu-text', 15, 45);
+    refresh('ram-gauge', 'ram-text', 60, 82);
 };
 
-// --- Command Processor ---
+// --- Bash Logic Switchboard ---
 const executeCommand = (raw) => {
-    const args = raw.toLowerCase().trim().split(' ');
-    const cmd = args[0];
+    const parts = raw.trim().split(/\s+/);
+    const cmd = parts[0].toLowerCase();
 
     switch(cmd) {
         case 'help':
-            writeToShell('Available: status, set [pillar] [tool], clear, provision');
+            writeToShell('Commands: ls, status, set [pillar] [tool], clear, uname -a, db-info');
+            break;
+        case 'ls':
+            writeToShell('iac/  orch/  db/  cicd/  sec/  scripts/  config.json');
+            break;
+        case 'uname':
+            writeToShell(parts[1] === '-a' ? 'Linux nexus-ubuntu-pro 6.8.0-40-generic #40-Ubuntu SMP x86_64' : 'Linux');
+            break;
+        case 'db-info':
+            writeToShell('DB_STATUS: Active\nConnections: 128\nEngine: Managed Cluster\nHealth: 100%', 'success');
             break;
         case 'status':
-            writeToShell('Nodes: 24 | Pods: 112 | Status: OPTIMAL', 'success');
+            writeToShell('System: OPTIMAL\nUptime: 112:45:02\nAll 5 pillars reporting green.', 'success');
             break;
         case 'set':
-            const [ , pillar, tool] = args;
-            const select = document.querySelector(`.module-select[data-pillar="${pillar}"]`);
-            if (select) {
-                const opt = Array.from(select.options).find(o => o.value.toLowerCase() === tool);
-                if (opt) {
-                    select.value = opt.value;
-                    select.dispatchEvent(new Event('change', { bubbles: true }));
-                    writeToShell(`SYNC: ${pillar.toUpperCase()} updated to ${opt.value}`, 'success');
+            const [ , pillar, tool] = parts;
+            const selectEl = document.querySelector(`.module-select[data-pillar="${pillar?.toLowerCase()}"]`);
+            if (selectEl) {
+                const option = Array.from(selectEl.options).find(opt => opt.value.toLowerCase() === tool?.toLowerCase());
+                if (option) {
+                    selectEl.value = option.value;
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    writeToShell(`OK: ${pillar.toUpperCase()} context synchronized to ${option.value}`, 'success');
                 } else {
-                    writeToShell(`ERR: Tool '${tool}' not found for ${pillar}`, 'error');
+                    writeToShell(`ERR: '${tool}' not found in ${pillar} repository.`, 'error');
                 }
             } else {
-                writeToShell(`ERR: Pillar '${pillar}' not recognized`, 'error');
+                writeToShell(`ERR: Pillar '${pillar}' not found in local architecture.`, 'error');
             }
             break;
         case 'clear':
             UI.interTerm.innerHTML = '';
             break;
         default:
-            writeToShell(`Command not found: ${cmd}`, 'error');
+            writeToShell(`-bash: ${cmd}: command not found`, 'error');
     }
 };
 
-// --- Event Listeners ---
+// --- Core Initialization ---
 const init = () => {
     renderPillars();
 
-    // Command Input
+    // MOTD
+    writeToShell(`Welcome to Ubuntu 24.04.1 LTS (GNU/Linux 6.8.0-generic)\n * Management: Nexus OS v2.2\n * Pillars: 05 Active\n\nSystem info: ${new Date().toLocaleString()}\n`);
+
+    // Input & History Handlers
     UI.termInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             const val = UI.termInput.value;
-            if (!val) return;
-            writeToShell(`<span class="prompt">admin@nexus:~$</span> ${val}`);
-            executeCommand(val);
+            if (val) {
+                cmdHistory.push(val);
+                historyIndex = cmdHistory.length;
+                writeToShell(`<span class="prompt">admin@nexus:~$</span> ${val}`);
+                executeCommand(val);
+            }
             UI.termInput.value = '';
+        } else if (e.key === 'ArrowUp') {
+            if (historyIndex > 0) {
+                historyIndex--;
+                UI.termInput.value = cmdHistory[historyIndex];
+            }
+            e.preventDefault();
+        } else if (e.key === 'ArrowDown') {
+            if (historyIndex < cmdHistory.length - 1) {
+                historyIndex++;
+                UI.termInput.value = cmdHistory[historyIndex];
+            } else {
+                historyIndex = cmdHistory.length;
+                UI.termInput.value = '';
+            }
+            e.preventDefault();
         }
     });
 
-    // Pillar Dropdown Logic
+    // Sync Dropdowns to Logs/Shell
     document.addEventListener('change', (e) => {
         if (e.target.classList.contains('module-select')) {
-            const pillar = e.target.dataset.pillar;
-            const val = e.target.value;
-            document.getElementById(`status-${pillar}`).textContent = `> Service: ${val}`;
-            addSystemLog(`${pillar.toUpperCase()}_ENG: Switched to ${val}`);
-            writeToShell(`UI_SYNC: Pillar ${pillar} set to ${val}`, 'output');
+            const p = e.target.dataset.pillar;
+            document.getElementById(`status-${p}`).textContent = `> Service: ${e.target.value}`;
+            addSystemLog(`${p.toUpperCase()}_MGR: Resource updated to ${e.target.value}`);
+            writeToShell(`SYS_SYNC: ${p.toUpperCase()} changed -> ${e.target.value}`);
         }
     });
 
@@ -153,42 +186,37 @@ const init = () => {
             if (group.dataset.type === 'cloud') {
                 const regions = CONFIG.cloud[opt.dataset.value];
                 UI.regionSelect.innerHTML = regions.map(r => `<option>${r}</option>`).join('');
+                addSystemLog(`CORE: Provider switched to ${opt.dataset.value}`);
             }
-            addSystemLog(`REGION: Primary cloud set to ${opt.dataset.value}`);
         }
 
         if (e.target.id === 'deploy-btn') {
             UI.progCont.hidden = false;
             let p = 0;
             const interval = setInterval(() => {
-                p += 5;
-                UI.progBar.style.width = p + '%';
-                UI.progPerc.textContent = p + '%';
+                p += Math.floor(Math.random() * 12) + 2;
                 if (p >= 100) {
+                    p = 100;
                     clearInterval(interval);
                     setTimeout(() => UI.progCont.hidden = true, 1000);
-                    addSystemLog("DEPLOY: Rollout complete.");
+                    addSystemLog("SYNC: Production environment rollout successful.");
+                    writeToShell("ROLLOUT COMPLETED SUCCESSFULLY", "success");
                 }
-            }, 150);
+                UI.progBar.style.width = p + '%';
+                UI.progPerc.textContent = p + '%';
+            }, 180);
         }
 
         if (e.target.id === 'panic-btn') {
             document.body.classList.add('panic-active');
-            addSystemLog("ALARM: Emergency lockdown!");
+            writeToShell("!! ALERT: EMERGENCY SHUTDOWN COMMAND SENT !!", "error");
             setTimeout(() => document.body.classList.remove('panic-active'), 3000);
         }
     });
 
-    // Nav Hover
-    document.getElementById('nav-links-container').addEventListener('mouseover', (e) => {
-        const info = e.target.closest('.nav-item')?.dataset.info;
-        if (info) UI.hoverDesc.textContent = info;
-    });
-
-    // Start Intervals
     updateTelemetry();
-    setInterval(updateTelemetry, 1000);
-    addSystemLog("NEXUS_OS: Systems initialized.");
+    setInterval(updateTelemetry, 1500);
+    addSystemLog("Nexus Core v2.2 Online.");
 };
 
 document.addEventListener('DOMContentLoaded', init);
