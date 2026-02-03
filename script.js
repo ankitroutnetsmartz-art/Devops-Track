@@ -1,23 +1,23 @@
 /**
  * Nexus v2.0 - Senior DevOps Partner Logic
- * Strategy: Event Delegation, Smoothed Telemetry, & Async Pipeline Simulation.
+ * Core: Event Delegation, Dynamic Pillar Modules, & Smoothed Telemetry.
  */
 
 "use strict";
 
 const CONFIG = {
     cloud: {
-        'AWS': ['us-east-1 (Virginia)', 'us-west-2 (Oregon)', 'eu-central-1 (Frankfurt)'],
+        'AWS': ['us-east-1', 'us-west-2', 'eu-central-1'],
         'Azure': ['East US', 'West US 2', 'North Europe'],
-        'GCP': ['us-central1 (Iowa)', 'europe-west1 (Belgium)', 'asia-east1 (Taiwan)']
+        'GCP': ['us-central1', 'europe-west1', 'asia-east1']
     },
-    stack: [
-        { name: "Terraform", cat: "IaC", desc: "HCL Infrastructure Provisioning" },
-        { name: "Kubernetes", cat: "Orch", desc: "Cloud Native Orchestration" },
-        { name: "Actions", cat: "CI/CD", desc: "Automated Workflow Engine" },
-        { name: "Vault", cat: "Sec", desc: "Identity-based Secrets Management" }
+    pillars: [
+        { id: "IaC", name: "Infrastructure", tools: ["Terraform", "Pulumi", "CloudFormation", "OpenTofu"] },
+        { id: "Orch", name: "Orchestration", tools: ["Kubernetes", "Docker Swarm", "Nomad", "OpenShift"] },
+        { id: "CI-CD", name: "Pipeline", tools: ["GitHub Actions", "Jenkins", "GitLab CI", "ArgoCD"] },
+        { id: "Sec", name: "Security", tools: ["Vault", "Snyk", "SonarQube", "Trivy"] }
     ],
-    gaugeMax: 125 // Matches SVG stroke-dasharray
+    gaugeMax: 125
 };
 
 // --- DOM Cache ---
@@ -32,138 +32,123 @@ const UI = {
     stackGrid: document.getElementById('stack-grid')
 };
 
-// --- Utility Functions ---
+// --- Utilities ---
 const addLog = (msg) => {
-    const line = document.createElement('div');
-    line.innerHTML = `<span style="color: var(--accent)">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
-    UI.terminal.prepend(line);
-    if (UI.terminal.children.length > 50) UI.terminal.lastChild.remove();
+    const entry = document.createElement('div');
+    entry.innerHTML = `<span style="color: var(--accent)">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+    UI.terminal.prepend(entry);
+    if (UI.terminal.children.length > 40) UI.terminal.lastChild.remove();
 };
 
-// --- Telemetry Perk: Smooth Gauges ---
+// --- Pillar Rendering Engine ---
+const renderPillars = () => {
+    UI.stackGrid.innerHTML = CONFIG.pillars.map(p => `
+        <article class="glass-card stack-module" data-pillar="${p.id}">
+            <small class="module-badge">${p.id}</small>
+            <h3 class="module-title">${p.name}</h3>
+            <select class="provision-select module-select" data-pillar="${p.id}">
+                ${p.tools.map(tool => `<option value="${tool}">${tool}</option>`).join('')}
+            </select>
+            <span class="module-status" id="status-${p.id}">> Service: ${p.tools[0]}</span>
+        </article>
+    `).join('');
+};
+
+// --- Telemetry Perk: Smooth Glide ---
 const updateTelemetry = () => {
-    const refreshGauge = (id, textId, min, max) => {
+    const run = (id, textId, min, max) => {
         const val = Math.floor(Math.random() * (max - min)) + min;
         const offset = CONFIG.gaugeMax - (val / 100 * CONFIG.gaugeMax);
         const path = document.getElementById(id);
         const label = document.getElementById(textId);
 
-        if (path && label) {
+        if (path) {
             path.style.strokeDashoffset = offset;
             label.textContent = `${val}%`;
-            
-            // Critical Threshold Alerting
-            if (val > 85) {
-                path.style.stroke = "var(--danger)";
-                label.style.color = "var(--danger)";
-            } else {
-                path.style.stroke = id.includes('cpu') ? "var(--accent)" : "var(--success)";
-                label.style.color = "var(--text)";
-            }
+            path.style.stroke = val > 80 ? "var(--danger)" : (id.includes('cpu') ? "var(--accent)" : "var(--success)");
         }
     };
-
-    refreshGauge('cpu-gauge', 'cpu-text', 15, 45); // Nominal CPU
-    refreshGauge('ram-gauge', 'ram-text', 60, 82); // Nominal RAM
+    run('cpu-gauge', 'cpu-text', 15, 42);
+    run('ram-gauge', 'ram-text', 58, 80);
 };
 
-// --- Core Handlers ---
-const updateRegionDropdown = (provider) => {
-    const regions = CONFIG.cloud[provider] || [];
-    UI.regionSelect.replaceChildren(...regions.map(r => {
-        const opt = document.createElement('option');
-        opt.value = opt.textContent = r;
-        return opt;
-    }));
-    addLog(`NET_CONFIG: Populated regions for ${provider}`);
-};
-
-const runDeployment = async () => {
-    const stages = ["Terraform Plan", "Security Audit", "Docker Build", "K8s Rollout"];
-    const deployBtn = document.getElementById('deploy-btn');
+// --- Logic Handlers ---
+const handleDeployment = async () => {
+    const steps = ["Validating Manifests", "Building Artifacts", "Security Scan", "Traffic Shifting"];
+    const btn = document.getElementById('deploy-btn');
     
-    deployBtn.disabled = true;
+    btn.disabled = true;
     UI.progCont.hidden = false;
-    
     let progress = 0;
-    const interval = setInterval(() => {
-        progress += Math.floor(Math.random() * 8) + 2;
-        
+
+    const pipeline = setInterval(() => {
+        progress += Math.floor(Math.random() * 10) + 2;
         if (progress >= 100) {
             progress = 100;
-            clearInterval(interval);
+            clearInterval(pipeline);
             setTimeout(() => {
                 UI.progCont.hidden = true;
-                deployBtn.disabled = false;
-                addLog("DEPLOY: Production cluster synchronization complete.");
+                btn.disabled = false;
+                addLog("DEPLOY: Production rollout successful.");
             }, 1000);
         }
-
         UI.progBar.style.width = `${progress}%`;
         UI.progPerc.textContent = `${progress}%`;
-        UI.progStat.textContent = stages[Math.floor((progress / 101) * stages.length)];
-    }, 350);
+        UI.progStat.textContent = `Running: ${steps[Math.floor((progress / 101) * steps.length)]}`;
+    }, 400);
 };
 
-// --- Initialization ---
+// --- Event Initialization ---
 const init = () => {
-    // 1. Build Tech Stack Cards
-    UI.stackGrid.innerHTML = CONFIG.stack.map(item => `
-        <article class="glass-card">
-            <small style="color: var(--accent); font-weight: 800;">${item.cat}</small>
-            <h3 style="margin: 5px 0;">${item.name}</h3>
-            <p style="font-size: 0.7rem; color: var(--text-dim); line-height: 1.2;">${item.desc}</p>
-        </article>
-    `).join('');
+    renderPillars();
 
-    // 2. Global Event Delegation (Click)
+    // Global Click Delegation
     document.addEventListener('click', (e) => {
-        // Provisioning Buttons
         const opt = e.target.closest('.provision-opt');
         if (opt) {
             const group = opt.parentElement;
             group.querySelector('.active').classList.remove('active');
             opt.classList.add('active');
             
-            if (group.dataset.type === 'cloud') updateRegionDropdown(opt.dataset.value);
-            addLog(`UI_EVENT: Context switched to ${opt.dataset.value}`);
+            if (group.dataset.type === 'cloud') {
+                const regions = CONFIG.cloud[opt.dataset.value];
+                UI.regionSelect.replaceChildren(...regions.map(r => {
+                    const o = document.createElement('option');
+                    o.value = o.textContent = r;
+                    return o;
+                }));
+            }
+            addLog(`CONTEXT: Switched to ${opt.dataset.value}`);
         }
 
-        // Action Buttons
-        if (e.target.id === 'deploy-btn') runDeployment();
+        if (e.target.id === 'deploy-btn') handleDeployment();
         if (e.target.id === 'panic-btn') {
             document.body.classList.add('panic-active');
-            addLog("CRITICAL: LOCKDOWN INITIATED by system administrator.");
+            addLog("CRITICAL: LOCKDOWN INITIATED.");
             setTimeout(() => document.body.classList.remove('panic-active'), 3000);
         }
     });
 
-    // 3. Nav Hover Delegation
+    // Pillar Dropdown Delegation
+    document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('module-select')) {
+            const pillar = e.target.dataset.pillar;
+            const tool = e.target.value;
+            document.getElementById(`status-${pillar}`).textContent = `> Service: ${tool}`;
+            addLog(`${pillar.toUpperCase()}_ENGINE: Context set to ${tool}`);
+        }
+    });
+
+    // Nav Hover Delegation
     document.getElementById('nav-links-container').addEventListener('mouseover', (e) => {
         const item = e.target.closest('.nav-item');
-        if (item) UI.hoverDesc.textContent = item.dataset.info;
+        if (item) UI.hoverDesc.textContent = item.dataset.info || item.textContent;
     });
 
-    document.getElementById('nav-links-container').addEventListener('mouseout', () => {
-        UI.hoverDesc.textContent = "System idle. Ready for input...";
-    });
-
-    // 4. Region Select Change
-    UI.regionSelect.addEventListener('change', (e) => {
-        addLog(`NET_CONFIG: Target region locked to ${e.target.value}`);
-    });
-
-    // Start Telemetry Cycles
-    updateRegionDropdown('AWS');
+    // Start Loops
     updateTelemetry();
-    setInterval(updateTelemetry, 1000); // 1s loop for smooth glide
-    
-    addLog("Nexus OS v2.0 Core Online. Uptime: 0.01h");
+    setInterval(updateTelemetry, 1000);
+    addLog("Nexus Core v2.0 Online.");
 };
 
-// Safety check for DOM availability
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
-}
+document.addEventListener('DOMContentLoaded', init);

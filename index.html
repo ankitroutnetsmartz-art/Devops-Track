@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Nexus OS DevOps Command Center - Real-time Infrastructure Monitoring">
+    <meta name="description" content="Nexus OS DevOps Command Center - Pillar Configuration Module">
     <title>Nexus OS | DevOps Command Center</title>
     <link rel="stylesheet" href="style.css">
     <style>
@@ -17,57 +17,37 @@
     <nav class="main-nav glass-card" id="nav-header">
         <div class="nav-logo">NEXUS_v2</div>
         <div class="nav-links" id="nav-links-container" role="menubar">
-            <button class="nav-item" role="menuitem" data-info="IaC: Infrastructure as Code via Terraform & OpenTofu.">IaC</button>
-            <button class="nav-item" role="menuitem" data-info="CI: Continuous Integration pipelines via GitHub Actions.">CI</button>
-            <button class="nav-item" role="menuitem" data-info="CD: Continuous Deployment via ArgoCD & Helm.">CD</button>
-            <button class="nav-item" role="menuitem" data-info="OBS: Real-time Metrics & Distributed Tracing.">OBS</button>
-            <button class="nav-item" role="menuitem" data-info="SEC: Identity Management & Secrets Encryption.">SEC</button>
+            <button class="nav-item" data-info="IaC: Select and provision infrastructure providers.">IaC</button>
+            <button class="nav-item" data-info="Orch: Manage container lifecycle and clusters.">ORCH</button>
+            <button class="nav-item" data-info="CI/CD: Configure automated deployment pipelines.">CI/CD</button>
+            <button class="nav-item" data-info="SEC: Set security policies and secret rotation.">SEC</button>
         </div>
-        <div id="hover-description" class="nav-desc" aria-live="polite">System idle. Ready for input...</div>
+        <div id="hover-description" class="nav-desc" aria-live="polite">System idle. Select a module to begin...</div>
     </nav>
 
     <div class="container main-layout">
         <div class="ops-column">
             
-            <div class="health-bar glass-card" aria-label="System Health Status">
-                <div class="health-item"><span class="status-indicator"></span> AWS_REGION</div>
-                <div class="health-item"><span class="status-indicator"></span> GIT_UPLINK</div>
-                <div class="health-item"><span class="status-indicator"></span> K8S_PLANE</div>
-                <div class="health-item"><span class="status-indicator"></span> DB_CLUSTER</div>
+            <div class="health-bar glass-card">
+                <div class="health-item"><span class="status-indicator"></span> AWS_UPLINK</div>
+                <div class="health-item"><span class="status-indicator"></span> K8S_HEALTH</div>
+                <div class="health-item"><span class="status-indicator"></span> PIPELINE_READY</div>
             </div>
 
-            <section class="glass-card provision-wizard" aria-labelledby="provisioning-title">
-                <h3 id="provisioning-title"><span class="status-dot"></span> Resource Provisioning</h3>
-                
-                <div class="selector-group">
-                    <p class="selector-label">Cloud Provider</p>
-                    <div class="provision-row" id="cloud-provider-row" data-type="cloud">
-                        <button class="provision-opt active" data-value="AWS">AWS</button>
-                        <button class="provision-opt" data-value="Azure">Azure</button>
-                        <button class="provision-opt" data-value="GCP">GCP</button>
-                    </div>
+            <section class="glass-card provision-wizard">
+                <h3>Global Context</h3>
+                <div class="provision-row" id="cloud-provider-row" data-type="cloud">
+                    <button class="provision-opt active" data-value="AWS">AWS</button>
+                    <button class="provision-opt" data-value="Azure">Azure</button>
+                    <button class="provision-opt" data-value="GCP">GCP</button>
                 </div>
-
-                <div class="selector-group">
-                    <label for="region-select" class="selector-label">Deployment Region</label>
-                    <select id="region-select" class="provision-select" aria-describedby="region-hint">
-                        </select>
-                </div>
-
-                <div class="selector-group">
-                    <p class="selector-label">Operating System</p>
-                    <div class="provision-row" id="os-row" data-type="os">
-                        <button class="provision-opt active" data-value="Ubuntu">Ubuntu</button>
-                        <button class="provision-opt" data-value="RHEL">RHEL</button>
-                        <button class="provision-opt" data-value="Debian">Debian</button>
-                    </div>
-                </div>
+                <select id="region-select" class="provision-select" style="margin-top: 15px;"></select>
             </section>
 
-            <section class="gauge-container" aria-label="Live Hardware Metrics">
+            <section class="gauge-container">
                 <div class="glass-card gauge-card">
                     <h4>CPU_LOAD</h4>
-                    <svg viewBox="0 0 100 50" class="gauge-svg">
+                    <svg viewBox="0 0 100 50">
                         <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#1e293b" stroke-width="8"/>
                         <path id="cpu-gauge" d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#007aff" stroke-width="8" stroke-dasharray="125" stroke-dashoffset="125"/>
                     </svg>
@@ -75,7 +55,7 @@
                 </div>
                 <div class="glass-card gauge-card">
                     <h4>RAM_USAGE</h4>
-                    <svg viewBox="0 0 100 50" class="gauge-svg">
+                    <svg viewBox="0 0 100 50">
                         <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#1e293b" stroke-width="8"/>
                         <path id="ram-gauge" d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#34c759" stroke-width="8" stroke-dasharray="125" stroke-dashoffset="125"/>
                     </svg>
@@ -85,34 +65,28 @@
 
             <section class="glass-card action-panel">
                 <div class="btn-group">
-                    <button class="deploy-btn" id="deploy-btn">🚀 Start Production Deploy</button>
+                    <button class="deploy-btn" id="deploy-btn">🚀 Execute Rollout</button>
                     <button class="panic-btn" id="panic-btn">🚨 PANIC</button>
                 </div>
-                
                 <div id="progress-container" class="progress-wrap" hidden>
-                    <div class="progress-info">
-                        <span id="progress-status">Initializing...</span>
-                        <span id="progress-percent">0%</span>
-                    </div>
-                    <div class="progress-bg">
-                        <div id="progress-bar" class="progress-fill"></div>
-                    </div>
+                    <div class="progress-info"><span id="progress-status">Initializing...</span><span id="progress-percent">0%</span></div>
+                    <div class="progress-bg"><div id="progress-bar" class="progress-fill"></div></div>
                 </div>
             </section>
 
-            <main id="stack-grid" class="grid" aria-label="Architecture Stack Components"></main>
+            <main id="stack-grid" class="grid" aria-label="DevOps Pillars">
+                </main>
         </div>
 
         <aside class="side-panel">
             <section class="glass-card feed-section">
-                <h3>GIT_AUDIT_FEED</h3>
-                <div id="git-feed" class="feed-content">
-                    </div>
+                <h3>AUDIT_LOG</h3>
+                <div id="git-feed" class="feed-content"></div>
             </section>
 
             <section class="glass-card terminal-section">
                 <h3>LIVE_TELEMETRY</h3>
-                <div id="terminal" class="terminal" role="log" aria-live="polite"></div>
+                <div id="terminal" class="terminal" role="log"></div>
             </section>
         </aside>
     </div>
