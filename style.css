@@ -1,25 +1,30 @@
-body {
-    background-color: #0d1117;
-    color: #c9d1d9;
-    font-family: sans-serif;
-    display: flex;
-    justify-content: center;
-    padding: 50px;
+:root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --text: #c9d1d9;
+    --accent: #58a6ff;
+    --border: #30363d;
+    --success: #238636;
 }
-.container { max-width: 600px; }
-h1 { color: #58a6ff; }
-.tool-card {
-    background: #161b22;
-    border: 1px solid #30363d;
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 8px;
+
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+.container { max-width: 1000px; margin: auto; }
+
+.controls { margin: 20px 0; display: flex; gap: 10px; }
+button { 
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: 0.3s;
 }
-button {
-    background: #238636;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    cursor: pointer;
+button:hover { border-color: var(--accent); color: var(--accent); }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+.card { 
+    background: var(--card); border: 1px solid var(--border); 
+    padding: 20px; border-radius: 10px; position: relative;
+}
+.tag { font-size: 0.7rem; color: var(--success); border: 1px solid var(--success); padding: 2px 5px; border-radius: 4px; }
+
+.terminal { 
+    background: #000; color: #0f0; font-family: monospace; 
+    padding: 15px; border-radius: 5px; height: 150px; overflow-y: auto; font-size: 0.85rem;
 }

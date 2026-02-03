@@ -3,15 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevOps Stack Radar</title>
+    <title>Pro DevOps Stack Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>DevOps Production Stack</h1>
-        <div id="stack-container"></div>
-        <button id="health-check-btn">Run System Check</button>
-        <p id="status-display"></p>
+        <header>
+            <h1>DevOps Production Radar</h1>
+            <div class="controls">
+                <button onclick="filterStack('all')">All</button>
+                <button onclick="filterStack('IaC')">IaC</button>
+                <button onclick="filterStack('CI/CD')">CI/CD</button>
+                <button onclick="filterStack('OBS')">Observability</button>
+            </div>
+        </header>
+
+        <main id="stack-grid" class="grid"></main>
+
+        <section class="terminal-section">
+            <h3>Live System Logs</h3>
+            <div id="terminal" class="terminal">
+                <div class="line">> System initialized...</div>
+            </div>
+        </section>
     </div>
     <script src="script.js"></script>
 </body>
