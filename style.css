@@ -141,3 +141,17 @@ body {
 
 .term-success { color: var(--success); }
 .term-error { color: var(--danger); }
+
+/* --- FinOps Monitor Styles --- */
+.cost-monitor {
+    background: linear-gradient(135deg, rgba(17, 24, 39, 0.8), rgba(30, 10, 36, 0.5)) !important;
+    margin-bottom: 15px;
+    border: 1px solid rgba(0, 122, 255, 0.3) !important;
+}
+.cost-header { display: flex; justify-content: space-between; align-items: center; }
+.trend-up { color: var(--danger); font-size: 0.65rem; font-weight: bold; }
+.cost-display { font-family: var(--font-mono); padding: 5px 0; }
+.currency { font-size: 1.2rem; color: var(--accent); vertical-align: top; margin-right: 2px; }
+#monthly-burn { font-size: 2.2rem; font-weight: 800; color: #fff; letter-spacing: -1px; }
+.period { color: var(--text-dim); font-size: 0.8rem; margin-left: 5px; }
+.cost-footer { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }

@@ -1,6 +1,7 @@
 /**
- * Nexus OS v2.2 - Master Engine
- * Target: ankit@NTZ-LINUX-003
+ * Nexus OS v2.2 - Master Integrated Engine
+ * Target Infrastructure: ankit@NTZ-LINUX-003
+ * Modules: FinOps, Cloud-Sync, Telemetry, Terminal
  */
 
 "use strict";
@@ -18,7 +19,13 @@ const CONFIG = {
         { id: "cicd", name: "CI/CD Pipeline", tools: ["GitHub Actions", "Jenkins", "ArgoCD"] },
         { id: "sec", name: "Security/Vault", tools: ["HashiCorp Vault", "Snyk", "Trivy"] }
     ],
-    gaugeMax: 125
+    pricing: {
+        base: { 'AWS': 450.00, 'Azure': 410.00, 'GCP': 380.00 },
+        tools: {
+            'Terraform': 50, 'Kubernetes': 200, 'PostgreSQL': 80, 
+            'MongoDB': 95, 'HashiCorp Vault': 120, 'Jenkins': 40
+        }
+    }
 };
 
 const UI = {
@@ -30,10 +37,11 @@ const UI = {
     progBar: document.getElementById('progress-bar'),
     progCont: document.getElementById('progress-container'),
     progPerc: document.getElementById('progress-percent'),
-    cloudBtns: document.querySelectorAll('.provision-opt')
+    cloudBtns: document.querySelectorAll('.provision-opt'),
+    burnDisplay: document.getElementById('monthly-burn')
 };
 
-// --- Utility: System Logging ---
+// --- System Utility: Logging ---
 const addSystemLog = (msg) => {
     const entry = document.createElement('div');
     entry.innerHTML = `<span style="color: var(--accent)">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
@@ -46,6 +54,31 @@ const writeToShell = (text, type = 'output') => {
     line.innerHTML = text;
     UI.interTerm.appendChild(line);
     UI.interTerm.scrollTop = UI.interTerm.scrollHeight;
+};
+
+// --- Core Logic: FinOps Cost Calculation ---
+const updateCost = () => {
+    const activeBtn = document.querySelector('.provision-opt.active');
+    if (!activeBtn) return;
+
+    const activeProvider = activeBtn.getAttribute('data-value');
+    let total = CONFIG.pricing.base[activeProvider] || 0;
+
+    // Add cost of selected tools
+    document.querySelectorAll('.module-select').forEach(select => {
+        total += CONFIG.pricing.tools[select.value] || 30;
+    });
+
+    // Update Display with simple counting effect
+    UI.burnDisplay.textContent = total.toFixed(2);
+    
+    // Budget Alert Logic (UI Feedback)
+    if (total > 1000) {
+        UI.burnDisplay.style.color = 'var(--danger)';
+        addSystemLog("WARN: Monthly burn rate exceeds $1,000 budget threshold!");
+    } else {
+        UI.burnDisplay.style.color = '#fff';
+    }
 };
 
 // --- Core Initialization ---
@@ -62,25 +95,31 @@ const init = () => {
         </article>
     `).join('');
 
-    // 2. Cloud Provider Switching Logic
+    // 2. Cloud Provider Interaction
     UI.cloudBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            // UI Update: Active State
             UI.cloudBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            // Logic Update: Regions
             const provider = btn.getAttribute('data-value');
             const regions = CONFIG.cloud[provider];
             UI.regionSelect.innerHTML = regions.map(r => `<option value="${r}">${r}</option>`).join('');
 
-            // Terminal Feedback
-            addSystemLog(`INFRA: Switched to ${provider} context.`);
+            addSystemLog(`INFRA: Context switched to ${provider}`);
             writeToShell(`SYSTEM_SYNC: cloud_provider=${provider}`, 'success');
+            updateCost();
         });
     });
 
-    // 3. Shell Command Handler
+    // 3. Tool Change Listener (FinOps Hook)
+    document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('module-select')) {
+            updateCost();
+            addSystemLog(`CONFIG: Modified ${e.target.getAttribute('data-pillar')} stack.`);
+        }
+    });
+
+    // 4. Shell Command Handler
     UI.termInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             const cmd = UI.termInput.value.trim().toLowerCase();
@@ -89,22 +128,22 @@ const init = () => {
             const parts = cmd.split(' ');
             switch(parts[0]) {
                 case 'help':
-                    writeToShell('Commands: ls, status, clear, whoami, set [pillar] [tool]');
+                    writeToShell('Commands: ls, status, clear, whoami, cost');
                     break;
                 case 'ls':
-                    writeToShell('iac/  orch/  db/  cicd/  sec/  config.json');
+                    writeToShell('iac/  orch/  db/  cicd/  sec/  finops_report.csv');
                     break;
                 case 'status':
-                    writeToShell('NEXUS_CORE: OPTIMAL | ALL PILLARS NOMINAL', 'success');
+                    writeToShell('SYSTEM: OPTIMAL | ALL PILLARS NOMINAL', 'success');
+                    break;
+                case 'cost':
+                    writeToShell(`CURRENT BURN RATE: $${UI.burnDisplay.textContent}/mo`, 'success');
                     break;
                 case 'whoami':
                     writeToShell('ankit (Senior DevOps Engineer)');
                     break;
                 case 'clear':
                     UI.interTerm.innerHTML = '';
-                    break;
-                case 'set':
-                    writeToShell(`Updating ${parts[1]} to ${parts[2]}...`, 'success');
                     break;
                 default:
                     writeToShell(`bash: ${cmd}: command not found`, 'error');
@@ -113,38 +152,38 @@ const init = () => {
         }
     });
 
-    // 4. Telemetry Loop
+    // 5. Hardware Telemetry Loop
     setInterval(() => {
-        const cpu = Math.floor(Math.random() * 30) + 15;
-        const ram = Math.floor(Math.random() * 20) + 60;
+        const cpu = Math.floor(Math.random() * 25) + 10;
+        const ram = Math.floor(Math.random() * 15) + 55;
         
         document.getElementById('cpu-gauge').style.strokeDashoffset = 125 - (cpu / 100 * 125);
         document.getElementById('cpu-text').textContent = `${cpu}%`;
         
         document.getElementById('ram-gauge').style.strokeDashoffset = 125 - (ram / 100 * 125);
         document.getElementById('ram-text').textContent = `${ram}%`;
-    }, 1500);
+    }, 2000);
 
-    // 5. Deployment Simulation
+    // 6. Deployment Logic
     document.getElementById('deploy-btn').addEventListener('click', () => {
         UI.progCont.hidden = false;
         let p = 0;
         const interval = setInterval(() => {
-            p += 4;
+            p += 5;
             UI.progBar.style.width = `${p}%`;
             UI.progPerc.textContent = `${p}%`;
             if (p >= 100) {
                 clearInterval(interval);
                 addSystemLog("SYNC: Production rollout successful.");
-                writeToShell("SUCCESS: Environment Deployed", "success");
-                setTimeout(() => UI.progCont.hidden = true, 2500);
+                writeToShell("SUCCESS: Infrastructure Synchronized", "success");
+                setTimeout(() => UI.progCont.hidden = true, 2000);
             }
-        }, 80);
+        }, 100);
     });
 
-    // Initial Trigger for AWS Regions
+    // Initial Trigger
     document.querySelector('.provision-opt.active').click();
-    addSystemLog("Nexus Core v2.2 Initialized.");
+    addSystemLog("Nexus OS v2.2 - Security and FinOps Modules Ready.");
 };
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', init); 
