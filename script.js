@@ -1,7 +1,7 @@
 /**
- * Nexus OS v2.2 - Master Integrated Engine
- * Patch: Global Interval Scoping for Panic Button
- * Target: ankit@NTZ-LINUX-003
+ * Nexus OS v2.2 - Chaos & Connectivity Edition
+ * Environment: ankit@NTZ-LINUX-003
+ * Pillars: 6 (IaC, Orch, DB, CI/CD, SEC, NET)
  */
 
 "use strict";
@@ -17,13 +17,15 @@ const CONFIG = {
         { id: "orch", name: "Orchestration", tools: ["Kubernetes", "Docker Swarm", "Nomad"] },
         { id: "db", name: "Database", tools: ["PostgreSQL", "MongoDB", "Redis", "MySQL"] },
         { id: "cicd", name: "CI/CD Pipeline", tools: ["GitHub Actions", "Jenkins", "ArgoCD"] },
-        { id: "sec", name: "Security/Vault", tools: ["HashiCorp Vault", "Snyk", "Trivy"] }
+        { id: "sec", name: "Security/Vault", tools: ["HashiCorp Vault", "Snyk", "Trivy"] },
+        { id: "net", name: "Network/CDN", tools: ["CloudFront", "Cloudflare", "Akamai", "Route53"] }
     ],
     pricing: {
         base: { 'AWS': 450.00, 'Azure': 410.00, 'GCP': 380.00 },
         tools: {
             'Terraform': 50, 'Kubernetes': 200, 'PostgreSQL': 80, 
-            'MongoDB': 95, 'HashiCorp Vault': 120, 'Jenkins': 40
+            'MongoDB': 95, 'HashiCorp Vault': 120, 'Jenkins': 40,
+            'CloudFront': 65, 'Cloudflare': 45, 'Akamai': 150
         }
     }
 };
@@ -41,20 +43,16 @@ const UI = {
     burnDisplay: document.getElementById('monthly-burn')
 };
 
-// --- Global State ---
 let commandHistory = [];
 let historyIndex = -1;
-let deployInterval = null; // Scoped globally for Panic access
+let deployInterval = null;
 
-// --- System Utility Functions ---
+// --- Utility Functions ---
 const addSystemLog = (msg) => {
     const entry = document.createElement('div');
-    entry.style.opacity = '0';
-    entry.style.transform = 'translateX(-10px)';
     entry.style.transition = 'all 0.3s ease-out';
     entry.innerHTML = `<span style="color: var(--accent)">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
     UI.terminal.prepend(entry);
-    setTimeout(() => { entry.style.opacity = '1'; entry.style.transform = 'translateX(0)'; }, 10);
 };
 
 const writeToShell = (text, type = 'output') => {
@@ -65,19 +63,7 @@ const writeToShell = (text, type = 'output') => {
     UI.interTerm.scrollTop = UI.interTerm.scrollHeight;
 };
 
-// --- FinOps Engine ---
-const animateValue = (id, start, end, duration) => {
-    const obj = document.getElementById(id);
-    let startTimestamp = null;
-    const step = (timestamp) => {
-        if (!startTimestamp) startTimestamp = timestamp;
-        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        obj.innerHTML = (progress * (end - start) + start).toFixed(2);
-        if (progress < 1) window.requestAnimationFrame(step);
-    };
-    window.requestAnimationFrame(step);
-};
-
+// --- Cost Engine ---
 const updateCost = () => {
     const activeBtn = document.querySelector('.provision-opt.active');
     if (!activeBtn) return;
@@ -86,109 +72,125 @@ const updateCost = () => {
     document.querySelectorAll('.module-select').forEach(select => {
         total += CONFIG.pricing.tools[select.value] || 30;
     });
-    const currentVal = parseFloat(UI.burnDisplay.textContent) || 0;
-    animateValue("monthly-burn", currentVal, total, 400);
-    UI.burnDisplay.style.color = total > 1000 ? 'var(--danger)' : '#fff';
+    UI.burnDisplay.textContent = total.toFixed(2);
+    UI.burnDisplay.style.color = total > 1200 ? 'var(--danger)' : '#fff';
 };
 
-// --- Initialization ---
+// --- Chaos Engineering: Drift Detection ---
+const triggerDrift = () => {
+    setInterval(() => {
+        const randomPillar = CONFIG.pillars[Math.floor(Math.random() * CONFIG.pillars.length)];
+        const statusElement = document.getElementById(`status-${randomPillar.id}`);
+        const cardElement = document.getElementById(`module-${randomPillar.id}`);
+
+        if (statusElement && cardElement && !statusElement.textContent.includes("DRIFT")) {
+            statusElement.textContent = "> Status: DRIFT_DETECTED";
+            statusElement.style.color = "var(--warning)";
+            cardElement.style.borderColor = "var(--warning)";
+            addSystemLog(`ALERT: Configuration drift in ${randomPillar.name}!`);
+            writeToShell(`WARN: state_mismatch in ${randomPillar.id}. Run 'terraform apply' to fix.`, "error");
+        }
+    }, 30000); // Check every 30 seconds
+};
+
+// --- Core Initialization ---
 const init = () => {
-    // 1. Render Grid
+    // 1. Render 6-Pillar Grid
     UI.stackGrid.innerHTML = CONFIG.pillars.map(p => `
-        <article class="glass-card stack-module">
+        <article class="glass-card stack-module" id="module-${p.id}" style="border-left: 3px solid var(--accent)">
             <small class="module-badge">${p.id.toUpperCase()}</small>
             <h3>${p.name}</h3>
             <select class="provision-select module-select" data-pillar="${p.id}">
                 ${p.tools.map(tool => `<option value="${tool}">${tool}</option>`).join('')}
             </select>
-            <span class="module-status" id="status-${p.id}">> Status: ACTIVE</span>
+            <span class="module-status" id="status-${p.id}" style="color: var(--success)">> Status: ACTIVE</span>
         </article>
     `).join('');
 
-    // 2. Interaction Handlers
+    // 2. Cloud Interaction
     UI.cloudBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             UI.cloudBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             UI.regionSelect.innerHTML = CONFIG.cloud[btn.getAttribute('data-value')].map(r => `<option value="${r}">${r}</option>`).join('');
             updateCost();
-            addSystemLog(`INFRA: Switched to ${btn.getAttribute('data-value')}`);
+            addSystemLog(`INFRA: Provider set to ${btn.getAttribute('data-value')}`);
         });
     });
 
+    // 3. Linux Terminal
     UI.termInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             const cmd = UI.termInput.value.trim();
-            if (cmd) {
-                writeToShell(`<span class="prompt">ankit@NTZ-LINUX-003:~$</span> ${cmd}`);
-                commandHistory.push(cmd);
-                historyIndex = commandHistory.length;
-                if (cmd.toLowerCase() === 'clear') UI.interTerm.innerHTML = '';
-                UI.termInput.value = '';
+            if (!cmd) return;
+            writeToShell(`<span class="prompt">ankit@NTZ-LINUX-003:~$</span> ${cmd}`);
+            commandHistory.push(cmd);
+            historyIndex = commandHistory.length;
+
+            const input = cmd.toLowerCase();
+            if (input === 'terraform apply') {
+                writeToShell("Refreshing state...", "success");
+                setTimeout(() => {
+                    document.querySelectorAll('.module-status').forEach(s => {
+                        s.textContent = "> Status: ACTIVE";
+                        s.style.color = "var(--success)";
+                    });
+                    document.querySelectorAll('.stack-module').forEach(m => m.style.borderColor = "var(--border)");
+                    writeToShell("Apply complete! Resources: 1 added, 1 changed, 0 destroyed.", "success");
+                    addSystemLog("SYNC: Infrastructure state restored.");
+                }, 1500);
+            } else if (input === 'ls') {
+                writeToShell('iac/ orch/ db/ cicd/ sec/ net/');
+            } else if (input === 'clear') {
+                UI.interTerm.innerHTML = '';
+            } else {
+                writeToShell(`bash: ${cmd}: command not found`, "error");
             }
+            UI.termInput.value = '';
         }
     });
 
-    UI.interTerm.addEventListener('click', () => UI.termInput.focus());
-
-    // 3. Deploy Engine
-    document.getElementById('deploy-btn').addEventListener('click', () => {
-        if (deployInterval) clearInterval(deployInterval);
-        UI.progCont.hidden = false;
-        let p = 0;
-        deployInterval = setInterval(() => {
-            p += 2;
-            UI.progBar.style.width = `${p}%`;
-            UI.progPerc.textContent = `${p}%`;
-            if (p >= 100) {
-                clearInterval(deployInterval);
-                addSystemLog("DEPLOY: Rollout complete.");
-                writeToShell("SUCCESS: Environment Deployed", "success");
-                setTimeout(() => UI.progCont.hidden = true, 2000);
-            }
-        }, 50);
-    });
-
-    // 4. PANIC BUTTON (FIXED)
+    // 4. Panic & Deploy
     document.getElementById('panic-btn').addEventListener('click', () => {
-        if (deployInterval) {
-            clearInterval(deployInterval);
-            deployInterval = null;
-        }
-        
-        // UI Lockdown
+        clearInterval(deployInterval);
         UI.progCont.hidden = true;
-        UI.progBar.style.width = '0%';
-        
-        // Critical Feedback
-        addSystemLog("CRITICAL: SIGKILL SENT - EMERGENCY HALT");
-        writeToShell("!!! EMERGENCY HALT TRIGGERED !!!", "error");
-        
+        addSystemLog("CRITICAL: Manual Emergency Halt!");
         document.querySelectorAll('.module-status').forEach(s => {
             s.textContent = "> Status: HALTED";
             s.style.color = "var(--danger)";
         });
-
-        // Visual Flash
-        document.body.style.backgroundColor = "#450a0a";
-        setTimeout(() => document.body.style.backgroundColor = "var(--bg)", 200);
     });
 
-    // 5. Telemetry Loop
-    setInterval(() => {
-        const cpu = Math.floor(Math.random() * 15) + 20;
-        const ram = Math.floor(Math.random() * 5) + 70;
-        document.getElementById('cpu-gauge').style.strokeDashoffset = 125 - (cpu / 100 * 125);
-        document.getElementById('cpu-text').textContent = `${cpu}%`;
-        document.getElementById('ram-gauge').style.strokeDashoffset = 125 - (ram / 100 * 125);
-        document.getElementById('ram-text').textContent = `${ram}%`;
-    }, 800);
+    document.getElementById('deploy-btn').addEventListener('click', () => {
+        UI.progCont.hidden = false;
+        let p = 0;
+        deployInterval = setInterval(() => {
+            p += 5;
+            UI.progBar.style.width = `${p}%`;
+            UI.progPerc.textContent = `${p}%`;
+            if (p >= 100) { clearInterval(deployInterval); writeToShell("DEPLOY SUCCESS", "success"); }
+        }, 100);
+    });
 
+    // 5. Hooks
+    UI.interTerm.addEventListener('click', () => UI.termInput.focus());
     document.addEventListener('change', (e) => {
         if (e.target.classList.contains('module-select')) updateCost();
     });
 
+    // Telemetry Loop
+    setInterval(() => {
+        const cpu = Math.floor(Math.random() * 20) + 15;
+        const ram = Math.floor(Math.random() * 10) + 70;
+        document.getElementById('cpu-gauge').style.strokeDashoffset = 125 - (cpu / 100 * 125);
+        document.getElementById('cpu-text').textContent = `${cpu}%`;
+        document.getElementById('ram-gauge').style.strokeDashoffset = 125 - (ram / 100 * 125);
+        document.getElementById('ram-text').textContent = `${ram}%`;
+    }, 1000);
+
+    // Initial Trigger
     document.querySelector('.provision-opt.active').click();
+    triggerDrift();
 };
 
 document.addEventListener('DOMContentLoaded', init);

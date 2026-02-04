@@ -186,3 +186,13 @@ body::after {
     pointer-events: none;
     opacity: 0.3;
 }
+#terminal div {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    padding: 2px 0;
+    animation: slideInLog 0.2s ease-out;
+}
+
+@keyframes slideInLog {
+    from { opacity: 0; transform: translateX(-5px); }
+    to { opacity: 1; transform: translateX(0); }
+}
