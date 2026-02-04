@@ -1,188 +1,164 @@
 /**
- * Nexus v2.2 - Master Stylesheet
- * Optimized for NTZ-LINUX-003
+ * Nexus OS v3.0 - Production Stylesheet
+ * Architecture: Rigid Grid with Flexible Terminal
  */
 
 :root {
-    --bg: #030712;
-    --ubuntu-dark: #300a24;
-    --ubuntu-mid: #5e2750;
-    --card: rgba(17, 24, 39, 0.75);
-    --border: rgba(255, 255, 255, 0.1);
-    --text: #f9fafb;
-    --text-dim: #9ca3af;
-    --accent: #007aff;
-    --success: #34c759;
+    --bg-dark: #09090b;
+    --bg-panel: #18181b;
+    --border: #27272a;
+    --accent: #3b82f6;
+    --success: #10b981;
     --danger: #ef4444;
-    --blur: blur(20px);
-    --font-mono: 'Ubuntu Mono', 'Fira Code', monospace;
+    --warning: #f59e0b;
+    --text-main: #f4f4f5;
+    --text-muted: #a1a1aa;
+    --font-ui: 'Inter', sans-serif;
+    --font-code: 'JetBrains Mono', monospace;
 }
 
+/* --- RESET & BASE --- */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    font-family: -apple-system, system-ui, sans-serif;
-    background-color: var(--bg);
-    color: var(--text);
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: var(--font-ui);
     height: 100vh;
-    overflow: hidden;
+    width: 100vw;
+    overflow: hidden; /* Locks the viewport */
 }
 
-.glass-bg {
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(circle at 50% 50%, #1a0614 0%, #030712 100%);
-    z-index: -1;
-}
-
-/* --- Layout Architecture --- */
-.container { max-width: 1600px; margin: 0 auto; height: 100%; }
-
-.main-layout {
-    display: grid;
-    grid-template-columns: 1fr 420px;
-    gap: 20px;
-    padding: 0 20px 20px;
-    height: calc(100vh - 90px);
-}
-
-.ops-column { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
-
-/* --- Navigation --- */
-.main-nav { display: flex; align-items: center; margin: 15px 20px; padding: 12px 25px; gap: 20px; border-radius: 15px; background: var(--card); backdrop-filter: var(--blur); border: 1px solid var(--border); }
-.nav-logo { font-weight: 800; color: var(--accent); }
-.nav-links { flex: 1; display: flex; gap: 10px; }
-.nav-item { background: transparent; border: none; color: var(--text-dim); font-size: 0.7rem; font-weight: 700; cursor: pointer; padding: 5px 10px; }
-.nav-desc { font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); }
-
-/* --- Cloud Provider Selection (Fixed Logic) --- */
-.provision-wizard { display: flex; flex-direction: column; gap: 10px; }
-.selector-label { font-size: 0.7rem; font-weight: bold; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; }
-
-.provision-row { display: flex; gap: 10px; }
-.provision-opt {
-    flex: 1;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 800;
-    font-size: 0.75rem;
-    transition: all 0.2s ease;
-}
-
-.provision-opt:hover { background: rgba(255, 255, 255, 0.08); }
-
-/* The fix for your button visibility */
-.provision-opt.active {
-    background: rgba(0, 122, 255, 0.15);
-    border-color: var(--accent);
-    color: white;
-    box-shadow: 0 0 15px rgba(0, 122, 255, 0.2);
-}
-
-.provision-select {
-    width: 100%;
-    padding: 12px;
-    background: #000;
-    border: 1px solid var(--border);
-    color: white;
-    border-radius: 8px;
-    font-family: var(--font-mono);
-    outline: none;
-}
-
-/* --- Dynamic Grid --- */
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-.glass-card { background: var(--card); backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
-
-.stack-module h3 { font-size: 0.9rem; margin-top: 5px; }
-.module-badge { color: var(--accent); font-size: 0.6rem; font-weight: 900; }
-.module-status { display: block; margin-top: 10px; font-family: var(--font-mono); font-size: 0.7rem; color: var(--success); }
-
-/* --- Ubuntu Terminal Styling --- */
-.side-panel { display: grid; grid-template-rows: 1fr 180px; gap: 15px; height: 100%; }
-
-.terminal-interactive {
-    background: var(--ubuntu-dark) !important;
-    border: 1px solid var(--ubuntu-mid) !important;
+.app-container {
     display: flex;
     flex-direction: column;
-    padding: 0 !important;
+    height: 100%;
+}
+
+/* --- TOP NAVIGATION --- */
+.top-bar {
+    height: 60px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    flex-shrink: 0;
+}
+
+.brand { font-weight: 800; display: flex; align-items: center; gap: 10px; }
+.brand-icon { color: var(--accent); }
+.version { font-size: 0.65rem; background: #27272a; padding: 2px 6px; border-radius: 4px; color: var(--text-muted); }
+
+.nav-metrics { display: flex; gap: 25px; font-family: var(--font-code); font-size: 0.8rem; }
+.metric .label { color: var(--text-muted); margin-right: 5px; font-weight: bold; }
+
+/* --- MAIN WORKSPACE --- */
+.workspace {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    flex: 1;
     overflow: hidden;
 }
 
-.terminal-header { background: var(--ubuntu-mid); padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; }
-.terminal-title { font-size: 0.7rem; font-family: var(--font-mono); }
-
-.terminal-body { flex: 1; padding: 15px; font-family: var(--font-mono); font-size: 0.85rem; color: #dfd8cf; overflow-y: auto; }
-.command-line { display: flex; padding: 12px 15px; background: rgba(0,0,0,0.3); border-top: 1px solid rgba(255,255,255,0.05); }
-.prompt { color: #87ff00; font-weight: bold; margin-right: 10px; font-family: var(--font-mono); }
-#terminal-input { background: transparent; border: none; color: white; outline: none; flex: 1; font-family: var(--font-mono); }
-
-/* --- Telemetry & Progress --- */
-.gauge-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-.gauge-card { text-align: center; position: relative; }
-.gauge-value { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); font-weight: 800; font-family: var(--font-mono); }
-
-.health-bar { display: flex; justify-content: space-between; padding: 10px 20px !important; }
-.status-indicator { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 10px var(--success); margin-right: 5px; }
-
-.btn-group { display: flex; gap: 10px; }
-.deploy-btn { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
-.panic-btn { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
-
-.progress-bg { background: rgba(255,255,255,0.1); height: 6px; border-radius: 10px; margin-top: 10px; overflow: hidden; }
-.progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
-
-.terminal { background: rgba(0,0,0,0.4); height: 100%; padding: 10px; font-family: var(--font-mono); font-size: 0.7rem; color: var(--success); overflow-y: auto; }
-
-.term-success { color: var(--success); }
-.term-error { color: var(--danger); }
-
-/* --- FinOps Monitor Styles --- */
-.cost-monitor {
-    background: linear-gradient(135deg, rgba(17, 24, 39, 0.8), rgba(30, 10, 36, 0.5)) !important;
-    margin-bottom: 15px;
-    border: 1px solid rgba(0, 122, 255, 0.3) !important;
-}
-.cost-header { display: flex; justify-content: space-between; align-items: center; }
-.trend-up { color: var(--danger); font-size: 0.65rem; font-weight: bold; }
-.cost-display { font-family: var(--font-mono); padding: 5px 0; }
-.currency { font-size: 1.2rem; color: var(--accent); vertical-align: top; margin-right: 2px; }
-#monthly-burn { font-size: 2.2rem; font-weight: 800; color: #fff; letter-spacing: -1px; }
-.period { color: var(--text-dim); font-size: 0.8rem; margin-left: 5px; }
-.cost-footer { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
-
-.panic-btn {
-    background: transparent;
-    border: 1px solid var(--danger);
-    color: var(--danger);
-    padding: 12px;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    flex: 1;
-    position: relative; /* Ensures it stays in the layout flow */
-    z-index: 10;        /* Layers it above background elements */
-    pointer-events: auto;
+/* --- SIDEBAR --- */
+.sidebar {
+    background: #111113;
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    overflow-y: auto;
 }
 
-.panic-btn:active {
-    background: rgba(239, 68, 68, 0.2);
-    transform: scale(0.98);
+.panel { display: flex; flex-direction: column; gap: 10px; }
+.panel-header { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; }
+
+.provider-grid { display: flex; gap: 8px; }
+.provider-btn {
+    flex: 1; background: #27272a; border: 1px solid transparent;
+    color: var(--text-muted); padding: 12px 5px; border-radius: 4px;
+    cursor: pointer; font-size: 0.75rem; font-weight: 600; transition: 0.2s;
 }
-body::after {
-    content: " ";
-    display: block;
-    position: fixed;
-    top: 0; left: 0; bottom: 0; right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
-                linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 118, 0.02));
-    z-index: 9999;
-    background-size: 100% 4px, 3px 100%;
-    pointer-events: none;
-    opacity: 0.3;
+.provider-btn.active { background: rgba(59, 130, 246, 0.15); color: var(--accent); border-color: var(--accent); }
+
+/* --- FINOPS PANEL --- */
+.cost-panel { background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 6px; border: 1px solid var(--border); }
+.cost-value { font-size: 1.8rem; font-family: var(--font-code); font-weight: 700; }
+.currency { color: var(--text-muted); font-size: 1rem; vertical-align: super; }
+
+/* --- TELEMETRY GAUGES --- */
+.gauges-row { display: flex; justify-content: space-around; padding: 10px 0; }
+.gauge-wrapper { text-align: center; font-size: 0.7rem; color: var(--text-muted); }
+.gauge-circle { position: relative; width: 60px; height: 60px; margin-bottom: 5px; }
+.gauge-circle svg { width: 60px; height: 60px; transform: rotate(-90deg); }
+.bg-ring { fill: none; stroke: #27272a; stroke-width: 5; }
+.fill-ring {
+    fill: none; stroke: var(--accent); stroke-width: 5;
+    stroke-dasharray: 138; stroke-dashoffset: 138;
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
+.gauge-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 0.8rem; font-family: var(--font-code); }
+
+/* --- CONTENT AREA: RIGID 3-ROW GRID --- */
+.content-area {
+    padding: 20px;
+    display: grid;
+    /* Row 1: Cards (Auto size) | Row 2: Terminal (Flexible) | Row 3: Logs (Fixed) */
+    grid-template-rows: auto 1fr 160px;
+    gap: 20px;
+    height: 100%;
+    overflow: hidden;
+}
+
+.stack-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.stack-card {
+    background: var(--bg-panel); border: 1px solid var(--border);
+    padding: 16px; border-radius: 8px; border-left: 3px solid var(--accent);
+    transition: border-color 0.3s, opacity 0.3s;
+}
+.stack-card h3 { font-size: 0.9rem; margin-bottom: 12px; font-weight: 600; }
+
+.stack-select {
+    width: 100%; background: #000; color: white; border: 1px solid var(--border);
+    padding: 10px; border-radius: 4px; font-size: 0.8rem; font-family: var(--font-code);
+    cursor: pointer; appearance: auto;
+}
+
+/* --- TERMINAL WINDOW --- */
+.terminal-window {
+    background: #0f172a; border: 1px solid #1e293b;
+    border-radius: 8px; display: flex; flex-direction: column; overflow: hidden;
+}
+.term-header { background: #1e293b; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; }
+.dots span { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #334155; margin-right: 5px; }
+.term-title { font-family: var(--font-code); font-size: 0.75rem; color: #94a3b8; }
+.term-body { flex: 1; padding: 15px; font-family: var(--font-code); font-size: 0.9rem; overflow-y: auto; color: #e2e8f0; line-height: 1.5; }
+.term-input-row { display: flex; padding: 12px 15px; background: rgba(0,0,0,0.3); align-items: center; border-top: 1px solid #1e293b; }
+#bash-input { background: transparent; border: none; color: white; flex: 1; outline: none; font-family: var(--font-code); font-size: 0.9rem; }
+.prompt { color: var(--success); margin-right: 12px; font-weight: bold; }
+
+/* --- LOG FEED --- */
+.log-window { display: flex; flex-direction: column; overflow: hidden; }
+.log-feed {
+    background: #000; border: 1px solid var(--border); flex: 1;
+    padding: 10px; font-family: var(--font-code); font-size: 0.75rem;
+    color: var(--text-muted); overflow-y: auto; border-radius: 6px;
+}
+.log-entry { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.02); }
+.ts { color: var(--accent); margin-right: 10px; font-weight: bold; }
+
+/* --- ACTION BUTTONS --- */
+.btn-primary { background: var(--accent); color: white; border: none; padding: 14px; border-radius: 6px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+.btn-primary:hover:not(:disabled) { filter: brightness(1.15); }
+.btn-primary:disabled { background: #3f3f46; cursor: not-allowed; opacity: 0.6; }
+
+.btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 14px; border-radius: 6px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+.btn-danger:hover { background: rgba(239, 68, 68, 0.1); }
