@@ -3,27 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Nexus OS v2.2 - Unified DevOps & Database Control Plane">
+    <meta name="description" content="Nexus OS v2.2 - Multi-Cloud DevOps Control Plane">
     <title>Nexus OS | Ubuntu Terminal Edition</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        :root { --bg-gradient: radial-gradient(circle at 50% 50%, #1a0614 0%, #030712 100%); }
-        .glass-bg { position: fixed; inset: 0; background: var(--bg-gradient); z-index: -1; }
-    </style>
 </head>
 <body class="dark-mode">
-    <div class="glass-bg" aria-hidden="true"></div>
+    <div class="glass-bg"></div>
 
-    <nav class="main-nav glass-card" id="nav-header">
+    <nav class="main-nav glass-card">
         <div class="nav-logo">NEXUS_v2.2</div>
-        <div class="nav-links" id="nav-links-container" role="menubar">
-            <button class="nav-item" data-info="Infrastructure: Terraform & Cloud Logic.">IaC</button>
-            <button class="nav-item" data-info="Orchestration: Kubernetes & Clusters.">ORCH</button>
-            <button class="nav-item" data-info="Database: Persistence & Schema Control.">DB</button>
-            <button class="nav-item" data-info="CI/CD: Deployment Pipelines.">CI/CD</button>
-            <button class="nav-item" data-info="Security: Secrets & Vaulting.">SEC</button>
+        <div class="nav-links">
+            <button class="nav-item">IaC</button>
+            <button class="nav-item">ORCH</button>
+            <button class="nav-item">DB</button>
+            <button class="nav-item">CI/CD</button>
+            <button class="nav-item">SEC</button>
         </div>
-        <div id="hover-description" class="nav-desc" aria-live="polite">System: admin@nexus-lts</div>
+        <div class="nav-desc">admin@NTZ-LINUX-003</div>
     </nav>
 
     <div class="container main-layout">
@@ -33,24 +29,25 @@
                 <div class="health-item"><span class="status-indicator"></span> AWS_UPLINK</div>
                 <div class="health-item"><span class="status-indicator"></span> K8S_PLANE</div>
                 <div class="health-item"><span class="status-indicator"></span> DB_CLUSTER</div>
-                <div class="health-item"><span class="status-indicator"></span> SEC_VAULT</div>
             </div>
 
             <section class="glass-card provision-wizard">
-                <div class="selector-group">
-                    <p class="selector-label">Cloud Infrastructure Provider</p>
-                    <div class="provision-row" id="cloud-provider-row" data-type="cloud">
-                        <button class="provision-opt active" data-value="AWS">AWS</button>
-                        <button class="provision-opt" data-value="Azure">Azure</button>
-                        <button class="provision-opt" data-value="GCP">GCP</button>
-                    </div>
+                <p class="selector-label">Cloud Infrastructure Provider</p>
+                <div class="provision-row" id="cloud-provider-row">
+                    <button class="provision-opt active" data-value="AWS">AWS</button>
+                    <button class="provision-opt" data-value="Azure">Azure</button>
+                    <button class="provision-opt" data-value="GCP">GCP</button>
                 </div>
-                <select id="region-select" class="provision-select" aria-label="Region Selection"></select>
+                <div class="selector-group">
+                    <p class="selector-label">Target Region</p>
+                    <select id="region-select" class="provision-select">
+                        </select>
+                </div>
             </section>
 
             <section class="gauge-container">
                 <div class="glass-card gauge-card">
-                    <h4>CPU_CORE_LOAD</h4>
+                    <h4>CPU_LOAD</h4>
                     <svg viewBox="0 0 100 50">
                         <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#2d0b23" stroke-width="8"/>
                         <path id="cpu-gauge" d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#007aff" stroke-width="8" stroke-dasharray="125" stroke-dashoffset="125"/>
@@ -58,7 +55,7 @@
                     <div class="gauge-value" id="cpu-text">0%</div>
                 </div>
                 <div class="glass-card gauge-card">
-                    <h4>RAM_NODE_USAGE</h4>
+                    <h4>RAM_USAGE</h4>
                     <svg viewBox="0 0 100 50">
                         <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#2d0b23" stroke-width="8"/>
                         <path id="ram-gauge" d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#34c759" stroke-width="8" stroke-dasharray="125" stroke-dashoffset="125"/>
@@ -73,24 +70,26 @@
                     <button class="panic-btn" id="panic-btn">🚨 PANIC</button>
                 </div>
                 <div id="progress-container" class="progress-wrap" hidden>
-                    <div class="progress-info"><span id="progress-status">Initializing...</span><span id="progress-percent">0%</span></div>
+                    <div class="progress-info">
+                        <span id="progress-status">Initializing...</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
                     <div class="progress-bg"><div id="progress-bar" class="progress-fill"></div></div>
                 </div>
             </section>
 
-            <main id="stack-grid" class="grid" aria-label="Architecture Stack Components"></main>
+            <main id="stack-grid" class="grid"></main>
         </div>
 
         <aside class="side-panel">
             <section class="glass-card terminal-interactive">
                 <div class="terminal-header">
-                    <span class="terminal-title">admin@nexus: ~ (bash)</span>
+                    <span class="terminal-title">ankit@NTZ-LINUX-003: ~ (bash)</span>
                     <div class="terminal-dots"><span></span><span></span><span></span></div>
                 </div>
-                <div id="interactive-terminal" class="terminal-body" role="log">
-                    </div>
+                <div id="interactive-terminal" class="terminal-body"></div>
                 <div class="command-line">
-                    <span class="prompt">admin@nexus:~$</span>
+                    <span class="prompt">ankit@NTZ-LINUX-003:~$</span>
                     <input type="text" id="terminal-input" spellcheck="false" autocomplete="off" autofocus>
                 </div>
             </section>
@@ -102,6 +101,6 @@
         </aside>
     </div>
 
-    <script src="script.js" defer></script>
+    <script src="script.js"></script>
 </body>
 </html>
