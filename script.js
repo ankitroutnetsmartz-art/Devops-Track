@@ -1,7 +1,6 @@
 /**
- * Nexus OS v2.2 - Master Integrated Engine
- * Target Infrastructure: ankit@NTZ-LINUX-003
- * Modules: FinOps, Cloud-Sync, Telemetry, Terminal
+ * Nexus OS v2.2 - Fluid Monitoring Edition
+ * Target: ankit@NTZ-LINUX-003
  */
 
 "use strict";
@@ -41,11 +40,18 @@ const UI = {
     burnDisplay: document.getElementById('monthly-burn')
 };
 
-// --- System Utility: Logging ---
+let commandHistory = [];
+let historyIndex = -1;
+
+// --- Fluid Utility: Smoothed Logging ---
 const addSystemLog = (msg) => {
     const entry = document.createElement('div');
+    entry.style.opacity = '0';
+    entry.style.transform = 'translateX(-10px)';
+    entry.style.transition = 'all 0.3s ease-out';
     entry.innerHTML = `<span style="color: var(--accent)">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
     UI.terminal.prepend(entry);
+    setTimeout(() => { entry.style.opacity = '1'; entry.style.transform = 'translateX(0)'; }, 10);
 };
 
 const writeToShell = (text, type = 'output') => {
@@ -56,34 +62,37 @@ const writeToShell = (text, type = 'output') => {
     UI.interTerm.scrollTop = UI.interTerm.scrollHeight;
 };
 
-// --- Core Logic: FinOps Cost Calculation ---
+// --- Fluid Logic: Counter Interpolation ---
+const animateValue = (id, start, end, duration) => {
+    const obj = document.getElementById(id);
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = (progress * (end - start) + start).toFixed(2);
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
+};
+
 const updateCost = () => {
     const activeBtn = document.querySelector('.provision-opt.active');
     if (!activeBtn) return;
-
     const activeProvider = activeBtn.getAttribute('data-value');
     let total = CONFIG.pricing.base[activeProvider] || 0;
-
-    // Add cost of selected tools
     document.querySelectorAll('.module-select').forEach(select => {
         total += CONFIG.pricing.tools[select.value] || 30;
     });
 
-    // Update Display with simple counting effect
-    UI.burnDisplay.textContent = total.toFixed(2);
-    
-    // Budget Alert Logic (UI Feedback)
-    if (total > 1000) {
-        UI.burnDisplay.style.color = 'var(--danger)';
-        addSystemLog("WARN: Monthly burn rate exceeds $1,000 budget threshold!");
-    } else {
-        UI.burnDisplay.style.color = '#fff';
-    }
+    const currentVal = parseFloat(UI.burnDisplay.textContent) || 0;
+    animateValue("monthly-burn", currentVal, total, 400);
+    UI.burnDisplay.style.color = total > 1000 ? 'var(--danger)' : '#fff';
 };
 
-// --- Core Initialization ---
 const init = () => {
-    // 1. Render 5-Pillar Grid
+    // 1. Render Grid
     UI.stackGrid.innerHTML = CONFIG.pillars.map(p => `
         <article class="glass-card stack-module">
             <small class="module-badge">${p.id.toUpperCase()}</small>
@@ -95,95 +104,56 @@ const init = () => {
         </article>
     `).join('');
 
-    // 2. Cloud Provider Interaction
+    // 2. Interaction Handlers
     UI.cloudBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             UI.cloudBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-
-            const provider = btn.getAttribute('data-value');
-            const regions = CONFIG.cloud[provider];
-            UI.regionSelect.innerHTML = regions.map(r => `<option value="${r}">${r}</option>`).join('');
-
-            addSystemLog(`INFRA: Context switched to ${provider}`);
-            writeToShell(`SYSTEM_SYNC: cloud_provider=${provider}`, 'success');
+            UI.regionSelect.innerHTML = CONFIG.cloud[btn.getAttribute('data-value')].map(r => `<option value="${r}">${r}</option>`).join('');
             updateCost();
         });
     });
 
-    // 3. Tool Change Listener (FinOps Hook)
-    document.addEventListener('change', (e) => {
-        if (e.target.classList.contains('module-select')) {
-            updateCost();
-            addSystemLog(`CONFIG: Modified ${e.target.getAttribute('data-pillar')} stack.`);
-        }
-    });
-
-    // 4. Shell Command Handler
     UI.termInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
-            const cmd = UI.termInput.value.trim().toLowerCase();
-            writeToShell(`<span class="prompt">ankit@NTZ-LINUX-003:~$</span> ${cmd}`);
-            
-            const parts = cmd.split(' ');
-            switch(parts[0]) {
-                case 'help':
-                    writeToShell('Commands: ls, status, clear, whoami, cost');
-                    break;
-                case 'ls':
-                    writeToShell('iac/  orch/  db/  cicd/  sec/  finops_report.csv');
-                    break;
-                case 'status':
-                    writeToShell('SYSTEM: OPTIMAL | ALL PILLARS NOMINAL', 'success');
-                    break;
-                case 'cost':
-                    writeToShell(`CURRENT BURN RATE: $${UI.burnDisplay.textContent}/mo`, 'success');
-                    break;
-                case 'whoami':
-                    writeToShell('ankit (Senior DevOps Engineer)');
-                    break;
-                case 'clear':
-                    UI.interTerm.innerHTML = '';
-                    break;
-                default:
-                    writeToShell(`bash: ${cmd}: command not found`, 'error');
+            const cmd = UI.termInput.value.trim();
+            if (cmd) {
+                writeToShell(`<span class="prompt">ankit@NTZ-LINUX-003:~$</span> ${cmd}`);
+                commandHistory.push(cmd);
+                historyIndex = commandHistory.length;
+                if (cmd.toLowerCase() === 'clear') UI.interTerm.innerHTML = '';
+                UI.termInput.value = '';
             }
-            UI.termInput.value = '';
         }
     });
 
-    // 5. Hardware Telemetry Loop
+    UI.interTerm.addEventListener('click', () => UI.termInput.focus());
+
+    // 3. Fluid Telemetry (Increased frequency for "smooth" feel)
     setInterval(() => {
-        const cpu = Math.floor(Math.random() * 25) + 10;
-        const ram = Math.floor(Math.random() * 15) + 55;
-        
+        const cpu = Math.floor(Math.random() * 15) + 20;
+        const ram = Math.floor(Math.random() * 5) + 70;
         document.getElementById('cpu-gauge').style.strokeDashoffset = 125 - (cpu / 100 * 125);
         document.getElementById('cpu-text').textContent = `${cpu}%`;
-        
         document.getElementById('ram-gauge').style.strokeDashoffset = 125 - (ram / 100 * 125);
         document.getElementById('ram-text').textContent = `${ram}%`;
-    }, 2000);
+    }, 800);
 
-    // 6. Deployment Logic
-    document.getElementById('deploy-btn').addEventListener('click', () => {
-        UI.progCont.hidden = false;
-        let p = 0;
-        const interval = setInterval(() => {
-            p += 5;
-            UI.progBar.style.width = `${p}%`;
-            UI.progPerc.textContent = `${p}%`;
-            if (p >= 100) {
-                clearInterval(interval);
-                addSystemLog("SYNC: Production rollout successful.");
-                writeToShell("SUCCESS: Infrastructure Synchronized", "success");
-                setTimeout(() => UI.progCont.hidden = true, 2000);
-            }
-        }, 100);
+    // 4. Panic & Deploy (Fluid UI Reset)
+    document.getElementById('panic-btn').addEventListener('click', () => {
+        addSystemLog("CRITICAL: HALT SIGNAL SENT");
+        document.querySelectorAll('.module-status').forEach(s => {
+            s.style.transition = "color 0.5s ease";
+            s.textContent = "> Status: HALTED";
+            s.style.color = "var(--danger)";
+        });
     });
 
-    // Initial Trigger
+    document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('module-select')) updateCost();
+    });
+
     document.querySelector('.provision-opt.active').click();
-    addSystemLog("Nexus OS v2.2 - Security and FinOps Modules Ready.");
 };
 
-document.addEventListener('DOMContentLoaded', init); 
+document.addEventListener('DOMContentLoaded', init);
