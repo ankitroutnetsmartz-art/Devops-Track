@@ -1,7 +1,7 @@
 /**
  * Nexus OS v2.2 - Master Integrated Engine
- * Target Infrastructure: ankit@NTZ-LINUX-003
- * Modules: FinOps, Cloud-Sync, Telemetry, Terminal
+ * Environment: ankit@NTZ-LINUX-003
+ * Features: FinOps, Cloud-Sync, Linux-Terminal Behavior (History/Focus)
  */
 
 "use strict";
@@ -41,7 +41,11 @@ const UI = {
     burnDisplay: document.getElementById('monthly-burn')
 };
 
-// --- System Utility: Logging ---
+// --- Terminal State Variables ---
+let commandHistory = [];
+let historyIndex = -1;
+
+// --- System Utility Functions ---
 const addSystemLog = (msg) => {
     const entry = document.createElement('div');
     entry.innerHTML = `<span style="color: var(--accent)">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
@@ -56,7 +60,7 @@ const writeToShell = (text, type = 'output') => {
     UI.interTerm.scrollTop = UI.interTerm.scrollHeight;
 };
 
-// --- Core Logic: FinOps Cost Calculation ---
+// --- FinOps Calculation ---
 const updateCost = () => {
     const activeBtn = document.querySelector('.provision-opt.active');
     if (!activeBtn) return;
@@ -64,26 +68,17 @@ const updateCost = () => {
     const activeProvider = activeBtn.getAttribute('data-value');
     let total = CONFIG.pricing.base[activeProvider] || 0;
 
-    // Add cost of selected tools
     document.querySelectorAll('.module-select').forEach(select => {
         total += CONFIG.pricing.tools[select.value] || 30;
     });
 
-    // Update Display with simple counting effect
     UI.burnDisplay.textContent = total.toFixed(2);
-    
-    // Budget Alert Logic (UI Feedback)
-    if (total > 1000) {
-        UI.burnDisplay.style.color = 'var(--danger)';
-        addSystemLog("WARN: Monthly burn rate exceeds $1,000 budget threshold!");
-    } else {
-        UI.burnDisplay.style.color = '#fff';
-    }
+    UI.burnDisplay.style.color = total > 1000 ? 'var(--danger)' : '#fff';
 };
 
 // --- Core Initialization ---
 const init = () => {
-    // 1. Render 5-Pillar Grid
+    // 1. Render 5-Pillar Stack
     UI.stackGrid.innerHTML = CONFIG.pillars.map(p => `
         <article class="glass-card stack-module">
             <small class="module-badge">${p.id.toUpperCase()}</small>
@@ -106,12 +101,82 @@ const init = () => {
             UI.regionSelect.innerHTML = regions.map(r => `<option value="${r}">${r}</option>`).join('');
 
             addSystemLog(`INFRA: Context switched to ${provider}`);
-            writeToShell(`SYSTEM_SYNC: cloud_provider=${provider}`, 'success');
+            writeToShell(`SYSTEM_SYNC: context=${provider}`, 'success');
             updateCost();
         });
     });
 
-    // 3. Tool Change Listener (FinOps Hook)
+    // 3. Linux Terminal Implementation
+    UI.termInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const cmd = UI.termInput.value.trim();
+            if (cmd === '') return;
+
+            writeToShell(`<span class="prompt">ankit@NTZ-LINUX-003:~$</span> ${cmd}`);
+            
+            // History Management
+            commandHistory.push(cmd);
+            historyIndex = commandHistory.length;
+
+            const parts = cmd.toLowerCase().split(' ');
+            const root = parts[0];
+
+            switch(root) {
+                case 'help':
+                    writeToShell('Commands: ls, pwd, uname, clear, whoami, history, cost, status');
+                    break;
+                case 'ls':
+                    writeToShell('<span style="color: #729fcf; font-weight: bold;">iac/  orch/  db/  cicd/  sec/  logs/</span>');
+                    break;
+                case 'pwd':
+                    writeToShell('/home/ankit/git/Devops-Track');
+                    break;
+                case 'uname':
+                    writeToShell('Linux NTZ-LINUX-003 6.8.0-generic #24-Ubuntu SMP');
+                    break;
+                case 'whoami':
+                    writeToShell('ankit (Senior DevOps Engineer)');
+                    break;
+                case 'history':
+                    commandHistory.forEach((c, i) => writeToShell(`  ${i + 1}  ${c}`));
+                    break;
+                case 'cost':
+                    writeToShell(`FINOPS: Current monthly burn is $${UI.burnDisplay.textContent}`, 'success');
+                    break;
+                case 'status':
+                    writeToShell('Checking systemd services...');
+                    setTimeout(() => writeToShell('● nexus-engine.service - Active (running)', 'success'), 400);
+                    break;
+                case 'clear':
+                    UI.interTerm.innerHTML = '';
+                    break;
+                default:
+                    writeToShell(`bash: ${root}: command not found`, 'error');
+            }
+            UI.termInput.value = '';
+
+        } else if (e.key === 'ArrowUp') {
+            if (historyIndex > 0) {
+                historyIndex--;
+                UI.termInput.value = commandHistory[historyIndex];
+            }
+            e.preventDefault();
+        } else if (e.key === 'ArrowDown') {
+            if (historyIndex < commandHistory.length - 1) {
+                historyIndex++;
+                UI.termInput.value = commandHistory[historyIndex];
+            } else {
+                historyIndex = commandHistory.length;
+                UI.termInput.value = '';
+            }
+            e.preventDefault();
+        }
+    });
+
+    // Auto-focus terminal on click
+    UI.interTerm.addEventListener('click', () => UI.termInput.focus());
+
+    // 4. Global Event Listeners
     document.addEventListener('change', (e) => {
         if (e.target.classList.contains('module-select')) {
             updateCost();
@@ -119,52 +184,16 @@ const init = () => {
         }
     });
 
-    // 4. Shell Command Handler
-    UI.termInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            const cmd = UI.termInput.value.trim().toLowerCase();
-            writeToShell(`<span class="prompt">ankit@NTZ-LINUX-003:~$</span> ${cmd}`);
-            
-            const parts = cmd.split(' ');
-            switch(parts[0]) {
-                case 'help':
-                    writeToShell('Commands: ls, status, clear, whoami, cost');
-                    break;
-                case 'ls':
-                    writeToShell('iac/  orch/  db/  cicd/  sec/  finops_report.csv');
-                    break;
-                case 'status':
-                    writeToShell('SYSTEM: OPTIMAL | ALL PILLARS NOMINAL', 'success');
-                    break;
-                case 'cost':
-                    writeToShell(`CURRENT BURN RATE: $${UI.burnDisplay.textContent}/mo`, 'success');
-                    break;
-                case 'whoami':
-                    writeToShell('ankit (Senior DevOps Engineer)');
-                    break;
-                case 'clear':
-                    UI.interTerm.innerHTML = '';
-                    break;
-                default:
-                    writeToShell(`bash: ${cmd}: command not found`, 'error');
-            }
-            UI.termInput.value = '';
-        }
-    });
-
-    // 5. Hardware Telemetry Loop
+    // 5. Telemetry & Deployment
     setInterval(() => {
-        const cpu = Math.floor(Math.random() * 25) + 10;
-        const ram = Math.floor(Math.random() * 15) + 55;
-        
+        const cpu = Math.floor(Math.random() * 20) + 10;
+        const ram = Math.floor(Math.random() * 10) + 65;
         document.getElementById('cpu-gauge').style.strokeDashoffset = 125 - (cpu / 100 * 125);
         document.getElementById('cpu-text').textContent = `${cpu}%`;
-        
         document.getElementById('ram-gauge').style.strokeDashoffset = 125 - (ram / 100 * 125);
         document.getElementById('ram-text').textContent = `${ram}%`;
     }, 2000);
 
-    // 6. Deployment Logic
     document.getElementById('deploy-btn').addEventListener('click', () => {
         UI.progCont.hidden = false;
         let p = 0;
@@ -181,9 +210,9 @@ const init = () => {
         }, 100);
     });
 
-    // Initial Trigger
+    // Initial State Trigger
     document.querySelector('.provision-opt.active').click();
-    addSystemLog("Nexus OS v2.2 - Security and FinOps Modules Ready.");
+    writeToShell('Nexus OS v2.2 initialized. System ready.');
 };
 
-document.addEventListener('DOMContentLoaded', init); 
+document.addEventListener('DOMContentLoaded', init);
