@@ -1,5 +1,6 @@
 /**
- * Nexus OS v2.2 - Fluid Monitoring Edition
+ * Nexus OS v2.2 - Master Integrated Engine
+ * Patch: Global Interval Scoping for Panic Button
  * Target: ankit@NTZ-LINUX-003
  */
 
@@ -40,10 +41,12 @@ const UI = {
     burnDisplay: document.getElementById('monthly-burn')
 };
 
+// --- Global State ---
 let commandHistory = [];
 let historyIndex = -1;
+let deployInterval = null; // Scoped globally for Panic access
 
-// --- Fluid Utility: Smoothed Logging ---
+// --- System Utility Functions ---
 const addSystemLog = (msg) => {
     const entry = document.createElement('div');
     entry.style.opacity = '0';
@@ -62,7 +65,7 @@ const writeToShell = (text, type = 'output') => {
     UI.interTerm.scrollTop = UI.interTerm.scrollHeight;
 };
 
-// --- Fluid Logic: Counter Interpolation ---
+// --- FinOps Engine ---
 const animateValue = (id, start, end, duration) => {
     const obj = document.getElementById(id);
     let startTimestamp = null;
@@ -70,9 +73,7 @@ const animateValue = (id, start, end, duration) => {
         if (!startTimestamp) startTimestamp = timestamp;
         const progress = Math.min((timestamp - startTimestamp) / duration, 1);
         obj.innerHTML = (progress * (end - start) + start).toFixed(2);
-        if (progress < 1) {
-            window.requestAnimationFrame(step);
-        }
+        if (progress < 1) window.requestAnimationFrame(step);
     };
     window.requestAnimationFrame(step);
 };
@@ -85,12 +86,12 @@ const updateCost = () => {
     document.querySelectorAll('.module-select').forEach(select => {
         total += CONFIG.pricing.tools[select.value] || 30;
     });
-
     const currentVal = parseFloat(UI.burnDisplay.textContent) || 0;
     animateValue("monthly-burn", currentVal, total, 400);
     UI.burnDisplay.style.color = total > 1000 ? 'var(--danger)' : '#fff';
 };
 
+// --- Initialization ---
 const init = () => {
     // 1. Render Grid
     UI.stackGrid.innerHTML = CONFIG.pillars.map(p => `
@@ -111,6 +112,7 @@ const init = () => {
             btn.classList.add('active');
             UI.regionSelect.innerHTML = CONFIG.cloud[btn.getAttribute('data-value')].map(r => `<option value="${r}">${r}</option>`).join('');
             updateCost();
+            addSystemLog(`INFRA: Switched to ${btn.getAttribute('data-value')}`);
         });
     });
 
@@ -129,7 +131,50 @@ const init = () => {
 
     UI.interTerm.addEventListener('click', () => UI.termInput.focus());
 
-    // 3. Fluid Telemetry (Increased frequency for "smooth" feel)
+    // 3. Deploy Engine
+    document.getElementById('deploy-btn').addEventListener('click', () => {
+        if (deployInterval) clearInterval(deployInterval);
+        UI.progCont.hidden = false;
+        let p = 0;
+        deployInterval = setInterval(() => {
+            p += 2;
+            UI.progBar.style.width = `${p}%`;
+            UI.progPerc.textContent = `${p}%`;
+            if (p >= 100) {
+                clearInterval(deployInterval);
+                addSystemLog("DEPLOY: Rollout complete.");
+                writeToShell("SUCCESS: Environment Deployed", "success");
+                setTimeout(() => UI.progCont.hidden = true, 2000);
+            }
+        }, 50);
+    });
+
+    // 4. PANIC BUTTON (FIXED)
+    document.getElementById('panic-btn').addEventListener('click', () => {
+        if (deployInterval) {
+            clearInterval(deployInterval);
+            deployInterval = null;
+        }
+        
+        // UI Lockdown
+        UI.progCont.hidden = true;
+        UI.progBar.style.width = '0%';
+        
+        // Critical Feedback
+        addSystemLog("CRITICAL: SIGKILL SENT - EMERGENCY HALT");
+        writeToShell("!!! EMERGENCY HALT TRIGGERED !!!", "error");
+        
+        document.querySelectorAll('.module-status').forEach(s => {
+            s.textContent = "> Status: HALTED";
+            s.style.color = "var(--danger)";
+        });
+
+        // Visual Flash
+        document.body.style.backgroundColor = "#450a0a";
+        setTimeout(() => document.body.style.backgroundColor = "var(--bg)", 200);
+    });
+
+    // 5. Telemetry Loop
     setInterval(() => {
         const cpu = Math.floor(Math.random() * 15) + 20;
         const ram = Math.floor(Math.random() * 5) + 70;
@@ -138,16 +183,6 @@ const init = () => {
         document.getElementById('ram-gauge').style.strokeDashoffset = 125 - (ram / 100 * 125);
         document.getElementById('ram-text').textContent = `${ram}%`;
     }, 800);
-
-    // 4. Panic & Deploy (Fluid UI Reset)
-    document.getElementById('panic-btn').addEventListener('click', () => {
-        addSystemLog("CRITICAL: HALT SIGNAL SENT");
-        document.querySelectorAll('.module-status').forEach(s => {
-            s.style.transition = "color 0.5s ease";
-            s.textContent = "> Status: HALTED";
-            s.style.color = "var(--danger)";
-        });
-    });
 
     document.addEventListener('change', (e) => {
         if (e.target.classList.contains('module-select')) updateCost();
