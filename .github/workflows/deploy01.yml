@@ -1,0 +1,35 @@
+name: Deploy Webpage to Azure VM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copy files via SCP
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.AZURE_VM_IP }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "."
+          target: "/var/www/html"
+          rm: false # Set to false to avoid deleting existing files in /var/www/html
+
+      - name: Post-Deployment Permissions
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AZURE_VM_IP }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo chown -R www-data:www-data /var/www/html/blog
+            sudo find /var/www/html/blog -type d -exec chmod 755 {} +
+            sudo find /var/www/html/blog -type f -exec chmod 644 {} +
+            sudo systemctl restart nginx
