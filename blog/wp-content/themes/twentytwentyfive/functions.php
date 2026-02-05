@@ -164,3 +164,11 @@ if ( ! function_exists( 'twentytwentyfive_format_binding' ) ) :
 		}
 	}
 endif;
+
+function devops_track_footer_info() {
+    $server_ip = $_SERVER['SERVER_ADDR'] ?? 'Unknown IP';
+    echo '<div style="text-align:center; padding: 20px; color: #666; font-family: monospace; font-size: 12px; border-top: 1px solid #ddd;">';
+    echo 'Environment: PRODUCTION | Azure Node: ' . esc_html($server_ip) . ' | Deployment: GitHub Actions';
+    echo '</div>';
+}
+add_action( 'wp_footer', 'devops_track_footer_info' );
