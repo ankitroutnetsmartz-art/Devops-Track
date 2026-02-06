@@ -1,4 +1,4 @@
-name: deploy01
+name: deploy02
 
 on:
   push:
@@ -18,11 +18,11 @@ jobs:
           host: ${{ secrets.AZURE_VM_IP }}
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "."
+          source: "docker-compose.yml,nginx.conf,blog/"
           target: "/home/azureuser/Devops-Track"
-          rm: true # Cleans the target directory before syncing to prevent stale files
+          rm: false # Set to false to preserve the 'blog' directory content if it exists
 
-      - name: Launch Docker Containers
+      - name: Production Deployment
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.AZURE_VM_IP }}
@@ -31,12 +31,14 @@ jobs:
           script: |
             cd /home/azureuser/Devops-Track
             
-            # Ensure the blog directory exists with correct permissions for WordPress/Nginx
+            # Ensure host directory for WordPress exists and has correct UID for www-data (33)
             mkdir -p blog
             sudo chown -R 33:33 blog
             sudo chmod -R 775 blog
-            
-            # Restart the stack
-            # Using -f to ensure we point exactly to the synced file
-            sudo docker compose -f docker-compose.yml down --remove-orphans
-            sudo docker compose -f docker-compose.yml up -d --build
+
+            # Destructive Cleanup: Remove existing containers to prevent volume locks/conflicts
+            # Warn: This stops current services briefly to ensure a clean start
+            sudo docker compose down --remove-orphans
+
+            # Pull and Start the stack
+            sudo docker compose up -d --build
