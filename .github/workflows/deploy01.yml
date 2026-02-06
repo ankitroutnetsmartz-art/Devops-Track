@@ -1,4 +1,4 @@
-name: deploy02
+name: deploy01
 
 on:
   push:
@@ -12,15 +12,34 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Pre-sync Cleanup
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AZURE_VM_IP }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Ensure the target directory exists
+            mkdir -p /home/azureuser/Devops-Track
+            
+            # Change ownership of existing files to azureuser so SCP can overwrite them
+            # This prevents the "Operation not permitted" error
+            sudo chown -R ${{ secrets.AZURE_VM_USER }}:${{ secrets.AZURE_VM_USER }} /home/azureuser/Devops-Track
+            
+            # Remove configuration files only; keep the 'blog' directory to preserve media/plugins
+            rm -f /home/azureuser/Devops-Track/docker-compose.yml
+            rm -f /home/azureuser/Devops-Track/nginx.conf
+
       - name: Sync Project to VM
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.AZURE_VM_IP }}
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.yml,nginx.conf,blog/"
+          source: "./docker-compose.yml,./nginx.conf,./Dockerfile"
           target: "/home/azureuser/Devops-Track"
-          rm: false # Set to false to preserve the 'blog' directory content if it exists
+          # Explicitly NOT syncing the blog folder from local to avoid permission collisions
+          rm: false 
 
       - name: Production Deployment
         uses: appleboy/ssh-action@master
@@ -31,14 +50,11 @@ jobs:
           script: |
             cd /home/azureuser/Devops-Track
             
-            # Ensure host directory for WordPress exists and has correct UID for www-data (33)
+            # Ensure the blog directory exists and is writable by the WordPress container (UID 33)
             mkdir -p blog
             sudo chown -R 33:33 blog
             sudo chmod -R 775 blog
 
-            # Destructive Cleanup: Remove existing containers to prevent volume locks/conflicts
-            # Warn: This stops current services briefly to ensure a clean start
-            sudo docker compose down --remove-orphans
-
-            # Pull and Start the stack
-            sudo docker compose up -d --build
+            # Pull latest images and restart services
+            sudo docker compose pull
+            sudo docker compose up -d --remove-orphans
