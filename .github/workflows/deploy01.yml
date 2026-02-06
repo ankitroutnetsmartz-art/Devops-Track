@@ -19,7 +19,6 @@ jobs:
           host: ${{ secrets.AZURE_VM_IP }}
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          connect_timeout: 30s
           script: |
             sudo systemctl stop nginx || true
             sudo systemctl disable nginx || true
