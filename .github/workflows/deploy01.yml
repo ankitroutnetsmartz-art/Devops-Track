@@ -19,8 +19,8 @@ jobs:
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "."
-          target: "/home/${{ secrets.AZURE_VM_USER }}/Devops-Track"
-          rm: true
+          target: "/home/azureuser/Devops-Track"
+          rm: true # Cleans the target directory before syncing to prevent stale files
 
       - name: Launch Docker Containers
         uses: appleboy/ssh-action@master
@@ -29,9 +29,14 @@ jobs:
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Navigate to the home directory of the user provided in secrets
-            cd /home/${{ secrets.AZURE_VM_USER }}/Devops-Track
-            sudo docker compose down --remove-orphans
-            sudo docker compose up -d --build
-            sudo chown -R 33:33 ./blog
-            sudo chmod -R 775 ./blog
+            cd /home/azureuser/Devops-Track
+            
+            # Ensure the blog directory exists with correct permissions for WordPress/Nginx
+            mkdir -p blog
+            sudo chown -R 33:33 blog
+            sudo chmod -R 775 blog
+            
+            # Restart the stack
+            # Using -f to ensure we point exactly to the synced file
+            sudo docker compose -f docker-compose.yml down --remove-orphans
+            sudo docker compose -f docker-compose.yml up -d --build
