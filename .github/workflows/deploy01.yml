@@ -1,4 +1,4 @@
-name: Deploy Webpage to Azure VM
+name: deploy01
 
 on:
   push:
@@ -12,24 +12,26 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Copy files via SCP
+      - name: Sync Project to VM
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.AZURE_VM_IP }}
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "."
-          target: "/var/www/html"
-          rm: false # Set to false to avoid deleting existing files in /var/www/html
+          target: "/home/${{ secrets.AZURE_VM_USER }}/Devops-Track"
+          rm: true
 
-      - name: Post-Deployment Permissions
+      - name: Launch Docker Containers
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.AZURE_VM_IP }}
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            sudo chown -R www-data:www-data /var/www/html/blog
-            sudo find /var/www/html/blog -type d -exec chmod 755 {} +
-            sudo find /var/www/html/blog -type f -exec chmod 644 {} +
-            sudo systemctl restart nginx
+            # Navigate to the home directory of the user provided in secrets
+            cd /home/${{ secrets.AZURE_VM_USER }}/Devops-Track
+            sudo docker compose down --remove-orphans
+            sudo docker compose up -d --build
+            sudo chown -R 33:33 ./blog
+            sudo chmod -R 775 ./blog
