@@ -2,8 +2,9 @@ name: deploy01
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+    tags:
+      - 'v*' # Triggers when you push a tag (e.g., git tag v1.1 && git push origin v1.1)
 
 jobs:
   deploy:
@@ -12,36 +13,38 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Pre-sync Cleanup
+      - name: Remote Infrastructure Preparation
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.AZURE_VM_IP }}
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # The timeout is increased in case the Bastion connection is slow
+          connect_timeout: 30s
           script: |
-            # Ensure the target directory exists
-            mkdir -p /home/azureuser/Devops-Track
+            # 1. Kill host processes competing for Port 80
+            sudo systemctl stop nginx || true
+            sudo systemctl disable nginx || true
             
-            # Change ownership of existing files to azureuser so SCP can overwrite them
-            # This prevents the "Operation not permitted" error
+            # 2. Workspace Management
+            sudo mkdir -p /home/azureuser/Devops-Track
             sudo chown -R ${{ secrets.AZURE_VM_USER }}:${{ secrets.AZURE_VM_USER }} /home/azureuser/Devops-Track
             
-            # Remove configuration files only; keep the 'blog' directory to preserve media/plugins
-            rm -f /home/azureuser/Devops-Track/docker-compose.yml
-            rm -f /home/azureuser/Devops-Track/nginx.conf
+            # 3. Prepare blog directory for sync
+            mkdir -p /home/azureuser/Devops-Track/blog
+            sudo chown -R ${{ secrets.AZURE_VM_USER }}:${{ secrets.AZURE_VM_USER }} /home/azureuser/Devops-Track/blog
 
-      - name: Sync Project to VM
+      - name: Sync Project Files (Code & Config)
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.AZURE_VM_IP }}
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "./docker-compose.yml,./nginx.conf,./Dockerfile"
+          # Ensure 'blog/' is included to sync your CSS/PHP changes
+          source: "docker-compose.yml,nginx.conf,blog/"
           target: "/home/azureuser/Devops-Track"
-          # Explicitly NOT syncing the blog folder from local to avoid permission collisions
-          rm: false 
 
-      - name: Production Deployment
+      - name: Production Deployment & Tagging
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.AZURE_VM_IP }}
@@ -50,11 +53,48 @@ jobs:
           script: |
             cd /home/azureuser/Devops-Track
             
-            # Ensure the blog directory exists and is writable by the WordPress container (UID 33)
-            mkdir -p blog
+            # 1. Determine the Version Tag
+            # If triggered by a tag, use it. Otherwise, default to 'latest'.
+            if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+              DEPLOY_TAG=${GITHUB_REF#refs/tags/}
+            else
+              DEPLOY_TAG="latest"
+            fi
+            
+            # 2. Generate/Update .env file
+            cat <<EOF > .env
+            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+            MYSQL_DATABASE=wordpress
+            MYSQL_USER=${{ secrets.MYSQL_USER }}
+            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+            WP_VERSION=$DEPLOY_TAG
+            EOF
+
+            # 3. Critical Fixes: Nginx Typo & Permissions
+            sed -i 's/fastcgi_focus_timeout/fastcgi_read_timeout/g' nginx.conf
             sudo chown -R 33:33 blog
             sudo chmod -R 775 blog
 
-            # Pull latest images and restart services
-            sudo docker compose pull
-            sudo docker compose up -d --remove-orphans
+            # 4. Deploy Stack
+            # --remove-orphans ensures old versioned containers are cleaned up if replaced
+            sudo docker compose up -d --force-recreate --remove-orphans
+
+---
+
+### Key Improvements in this Rewrite
+* **Dynamic Tagging**: It detects if you pushed a tag (`v1.1`) or a branch (`main`) and updates the `WP_VERSION` variable accordingly.
+* **Bastion Resilience**: Added `connect_timeout` to the SSH action to handle intermittent connection delays.
+* **Recursive Sync**: The `scp` step now includes `blog/`, ensuring your CSS changes in `wp-content` actually reach the server.
+* **Orphan Management**: Added `--remove-orphans` so that when you switch tags, Docker doesn't leave "ghost" containers running.
+
+---
+
+### Validation Step
+After the pipeline runs, execute this on your VM to confirm the versioned container is active:
+
+```bash
+# Validation: Check container names and the image tags they are using
+sudo docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
+
+# Validation: Verify the .env file has the correct tag
+grep "WP_VERSION" /home/azureuser/Devops-Track/.env
