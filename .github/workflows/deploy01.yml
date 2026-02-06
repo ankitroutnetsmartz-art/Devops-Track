@@ -19,11 +19,11 @@ jobs:
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Ensure target directory exists and is owned by azureuser for SCP sync
+            # Create directory if missing and ensure azureuser ownership for SCP
             sudo mkdir -p /home/azureuser/Devops-Track
             sudo chown -R ${{ secrets.AZURE_VM_USER }}:${{ secrets.AZURE_VM_USER }} /home/azureuser/Devops-Track
             
-            # Remove old config files to prevent conflicts
+            # Remove existing config files to prevent permission/overwrite issues
             rm -f /home/azureuser/Devops-Track/docker-compose.yml
             rm -f /home/azureuser/Devops-Track/nginx.conf
 
@@ -33,6 +33,7 @@ jobs:
           host: ${{ secrets.AZURE_VM_IP }}
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # Exclude the 'blog' directory to avoid permission collisions with container-owned files
           source: "docker-compose.yml,nginx.conf"
           target: "/home/azureuser/Devops-Track"
 
@@ -45,8 +46,7 @@ jobs:
           script: |
             cd /home/azureuser/Devops-Track
             
-            # Create .env file from GitHub Secrets to resolve "variable not set" warnings
-            # Note: Ensure these secrets are added in GitHub Settings > Secrets and Variables > Actions
+            # Inject Credentials into .env file
             cat <<EOF > .env
             MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
             MYSQL_DATABASE=wordpress
@@ -54,11 +54,11 @@ jobs:
             MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
             EOF
 
-            # Set permissions for WordPress content
+            # Prepare WordPress content directory with correct permissions for www-data (UID 33)
             mkdir -p blog
             sudo chown -R 33:33 blog
             sudo chmod -R 775 blog
 
-            # Restart the stack with the new config and environment
+            # Destructive Restart: Clears port 80 conflicts and applies new config/env
             sudo docker compose down --remove-orphans
             sudo docker compose up -d
